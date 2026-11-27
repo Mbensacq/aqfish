@@ -15,13 +15,11 @@ import type { SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { AlgaePatch } from '../sim/algae';
 import type { TankFouling } from '../sim/fouling';
-import type { Egg } from '../sim/eggs';
 import type { DayLight } from '../sim/daylight';
 import { environmentDataWater, type Environment } from '../sim/environment';
 import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
-import type { FoodPellet } from '../sim/food';
 import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room, type RoomBlock } from '../sim/room';
 import type { Box3 } from '../sim/tank';
 import type { DecorPick } from './decor-pick';
@@ -36,7 +34,7 @@ import type { StrokePoint } from './stroke';
 import { FramePipeline, type AquariumRenderer, type FrameScene } from './frame-pipeline';
 import type { PhotoPixels } from './photo-capture';
 import { SceneLighting } from './scene-lighting';
-import { ViewLayers } from './view-layers';
+import { ViewLayers, type GroundFrame } from './view-layers';
 import { ViewPicker, type PickedRay } from './view-picker';
 import { DecorClock } from './decor-clock';
 import {
@@ -353,29 +351,25 @@ export class AquariumView {
     return this.layers.waterLight.time;
   }
 
-  /** Pose les granulés de nourriture du monde (`World.food`). À appeler avant `renderFrame()`. */
-  updateFood(food: readonly FoodPellet[]): void {
-    if (!this.disposed) {
-      this.layers.food.update(food);
-    }
-  }
-
   /**
-   * Pose les œufs du monde (`World.eggs`, issue #478), `hatchTime` étant la durée
-   * d'incubation (teinte des œufs mûrs). À appeler avant `renderFrame()`.
+   * Pose ce qui repose dans l'eau et au sol : granulés (`World.food`), œufs (`World.eggs`,
+   * #478, `hatchTime` : durée d'incubation, teinte des œufs mûrs) et exuvies des crevettes
+   * (`World.exuviae`, #859) au temps simulé `time`. À appeler avant `renderFrame()`.
    */
-  updateEggs(eggs: readonly Egg[] | undefined, hatchTime: number): void {
+  updateGround(ground: GroundFrame): void {
     if (!this.disposed) {
-      this.layers.eggs.update(eggs, hatchTime);
+      this.layers.food.update(ground.food);
+      this.layers.eggs.update(ground.eggs, ground.hatchTime);
+      this.layers.exuviae.update(ground.exuviae, ground.time);
     }
   }
 
-  /** Nombre d'œufs posés par le dernier `updateEggs` (tests). */
+  /** Nombre d'œufs posés par le dernier `updateGround` (tests). */
   get eggCount(): number {
     return this.layers.eggs.count;
   }
 
-  /** Nombre de granulés posés par le dernier `updateFood` (tests). */
+  /** Nombre de granulés posés par le dernier `updateGround` (tests). */
   get foodCount(): number {
     return this.layers.food.count;
   }

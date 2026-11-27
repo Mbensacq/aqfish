@@ -14,12 +14,26 @@ import { CurrentIndicatorLayer } from './current-indicator-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { EggLayer } from './egg-layer';
+import { ExuviaLayer } from './exuvia-layer';
+import type { Egg } from '../sim/eggs';
+import type { FoodPellet } from '../sim/food';
+import type { Exuvia } from '../sim/shrimp-molt';
 import { FoodLayer } from './food-layer';
 import { LilyPadLayer } from './lily-pad-layer';
 import { RainLayer } from './rain-layer';
 import { RoomLayer } from './room-layer';
 import { WaterLightLayer } from './water-light';
 import { LightRaysLayer, LIGHT_RAY_ENVIRONMENTS } from './light-rays-layer';
+
+/** Ce que pose `AquariumView.updateGround` : granulés, œufs et exuvies du monde au temps `time`. */
+export interface GroundFrame {
+  readonly food: readonly FoodPellet[];
+  readonly eggs: readonly Egg[] | undefined;
+  /** Durée d'incubation des œufs (teinte des œufs mûrs). */
+  readonly hatchTime: number;
+  readonly exuviae: readonly Exuvia[] | undefined;
+  readonly time: number;
+}
 
 /**
  * Scène statique d'un environnement et toutes les couches de `AquariumView` (#698), créées
@@ -32,7 +46,7 @@ export class ViewLayers {
   readonly decor = new DecorLayer();
   /** Pièce autour du bac (#187), masquée par défaut. */
   readonly room = new RoomLayer();
-  /** Granulés de nourriture (issue #67), posés par `updateFood`. */
+  /** Granulés de nourriture (issue #67), posés par `updateGround`. */
   readonly food = new FoodLayer();
   /** Œufs des corydoras (issue #478) : masqués tant qu'il n'y en a aucun. */
   readonly eggs = new EggLayer();
@@ -70,6 +84,11 @@ export class ViewLayers {
    * mortes, puis repère du courant.
    */
   readonly effects: readonly EffectLayer[];
+  /**
+   * Exuvies des crevettes (#859) : créées en dernier, ajoutées en dernier à la scène, pour que les
+   * identifiants des couches antérieures, et donc le tri des objets opaques, ne changent pas.
+   */
+  readonly exuviae: ExuviaLayer;
   /** Toutes les couches, dans l'ordre d'ajout à la scène (et de libération). */
   readonly all: readonly SceneLayer[];
 
@@ -101,6 +120,7 @@ export class ViewLayers {
     this.effects = [this.bubbles, this.rain, this.floatingLeaves, this.current];
     this.catappa = new CatappaLayer(water);
     this.feeder = new FeederLayer(dimensions);
+    this.exuviae = new ExuviaLayer();
     this.all = this.sceneOrder();
     for (const layer of this.all) {
       this.world.scene.add(layer.object);
@@ -127,6 +147,7 @@ export class ViewLayers {
       this.fouling,
       this.alertHighlight,
       this.room,
+      this.exuviae,
     ];
   }
 
@@ -143,6 +164,7 @@ export class ViewLayers {
     }
     this.food.setBrightness(brightness);
     this.eggs.setBrightness(brightness);
+    this.exuviae.setBrightness(brightness);
     this.catappa.setBrightness(brightness);
     this.feeder.setBrightness(brightness);
     this.algae.setBrightness(brightness);

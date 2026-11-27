@@ -4,6 +4,7 @@ import type { Vec3 } from './flocking';
 import { FRY_FULL_COVER_M2, fryCover, fryPlants, isFry } from './fry';
 import type { SheetField } from './sheet-field';
 import { sourced } from './sheet-field';
+import { isShrimpHiding, stepMoltsInPlace } from './shrimp-molt';
 import type { SpeciesId } from './species';
 import { SPECIES_ECOLOGY } from './species-ecology';
 import { capacityProfile, speciesNeedLiters } from './tank-capacity';
@@ -32,6 +33,9 @@ import type { Entity, Mutable, MutableWorld } from './world-types';
  *   Un adulte n'est mangé que par les mangeurs d'adultes (poisson rouge) ; un jeune par tous
  *   les mangeurs de crevettes, sauf s'il est à l'abri des plantes proches (refuge gradué de
  *   #823 : son risque est multiplié par la part non couverte). Les otocinclus n'en mangent pas.
+ *   Une crevette fraîchement muée se cache et n'est mangée par personne (#859,
+ *   `isShrimpHiding` de `sim/shrimp-molt.ts`).
+ * - **Mues** (#859) : à chaque pas, avant la prédation (`stepMoltsInPlace`).
  *
  * Valeurs : **approximations de jeu** (temps compressé) ; en vrai, une femelle porte ses œufs
  * environ un mois et les jeunes sont mûrs vers trois mois.
@@ -177,6 +181,7 @@ export function stepShrimpColonyInPlace(
   liters?: number,
 ): number {
   const start = world.time - dt;
+  stepMoltsInPlace(world, dt);
   const hunt = endedWindow(start, world.time, PREDATION_PERIOD_SECONDS);
   const clutch = endedWindow(start, world.time, CLUTCH_PERIOD_SECONDS);
   if ((hunt < 0 && clutch < 0) || !world.entities.some(isColonyAnimal)) {
@@ -265,7 +270,7 @@ function huntShrimpInPlace(world: MutableWorld, window: number, windows: number)
   let eaten = 0;
   for (let i = entities.length - 1; i >= 0; i--) {
     const shrimp = entities[i];
-    if (!isColonySpecies(shrimp.species)) {
+    if (!isColonySpecies(shrimp.species) || isShrimpHiding(shrimp, world.seed, world.time)) {
       continue;
     }
     let risk = eaters.adults * ADULT_SHRIMP_RISK;

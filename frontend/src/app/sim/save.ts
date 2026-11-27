@@ -18,6 +18,8 @@ import { copyFirstTankPath, readFirstTankPath, type FirstTankPathState } from '.
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
 import { copyFeeder, hasFeeder, readFeeder, type FeederState } from './auto-feeder';
 import type { DeadAnimal, DeathCause } from './mortality';
+import { parseExuviaList } from './save-exuviae';
+import type { Exuvia } from './shrimp-molt';
 import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
 import { copySavedJournal, readJournal, type SavedJournal } from './journal';
 import type { FoodPellet } from './food';
@@ -191,6 +193,8 @@ export interface SavedWorld {
     readonly deadFor: number;
     readonly cause?: DeathCause;
   })[];
+  /** Exuvies des crevettes (#859) : absentes des sauvegardes antérieures, jamais écrites vides. */
+  readonly exuviae?: readonly Exuvia[];
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -309,6 +313,9 @@ function savedOptionalParts(world: World): Partial<SavedWorld> {
             ...(body.cause === undefined ? {} : { cause: body.cause }),
           })),
         }),
+    ...(world.exuviae === undefined || world.exuviae.length === 0
+      ? {}
+      : { exuviae: world.exuviae.map((shell) => ({ ...shell })) }),
   };
 }
 
@@ -527,6 +534,7 @@ interface WorldParts extends WorldStates {
   readonly eggs?: Egg[];
   readonly mortality?: true;
   readonly dead?: DeadAnimal[];
+  readonly exuviae?: Exuvia[];
   readonly water?: WaterState;
 }
 
@@ -546,6 +554,7 @@ const WORLD_PART_ORDER = [
   'eggs',
   'mortality',
   'dead',
+  'exuviae',
 ] as const;
 
 /**
@@ -622,6 +631,7 @@ function parseWorldParts(
   const states = parseStates(value, environment, problems);
   problems.push(...problemsOf(value, [MORTALITY_RULE]));
   const dead = parseDeadList(own(value, 'dead'), context, fish, problems);
+  const exuviae = parseExuviaList(own(value, 'exuviae'), place, problems);
   return {
     decor,
     fish,
@@ -632,6 +642,7 @@ function parseWorldParts(
     ...states,
     mortality: own(value, 'mortality') === true ? true : undefined,
     dead: dead.length > 0 ? dead : undefined,
+    exuviae: exuviae.length > 0 ? exuviae : undefined,
     water: parseWaterField(own(value, 'water'), environment, problems),
   };
 }

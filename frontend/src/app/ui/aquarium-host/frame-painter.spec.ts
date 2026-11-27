@@ -40,10 +40,7 @@ class FakeView {
     this.fish++;
     this.lastAlpha = alpha;
   }
-  updateFood(): void {
-    this.other++;
-  }
-  updateEggs(): void {
+  updateGround(): void {
     this.other++;
   }
   updateDecor(): void {
