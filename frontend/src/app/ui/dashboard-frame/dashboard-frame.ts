@@ -262,6 +262,17 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
       [attr.data-phase]="phase()"
       [attr.title]="simSpoken()"
     >
+      @if (season(); as s) {
+        <!-- Saison du bassin (#858) : mot et flèche de tendance, phrase dans l'infobulle. -->
+        <span
+          class="dashboard__season"
+          data-dashboard-season
+          [attr.data-season]="s.season"
+          [attr.data-season-trend]="s.trend"
+          [attr.title]="s.spoken"
+          >{{ s.label }} {{ arrows[s.trend] }}</span
+        >
+      }
       <svg
         class="dashboard__day"
         aria-hidden="true"
@@ -278,17 +289,6 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           />
         }
       </svg>
-      @if (season(); as s) {
-        <!-- Saison du bassin (#858) : mot et flèche de tendance, phrase dans l'infobulle. -->
-        <span
-          class="dashboard__season"
-          data-dashboard-season
-          [attr.data-season]="s.season"
-          [attr.data-season-trend]="s.trend"
-          [attr.title]="s.spoken"
-          >{{ s.label }} {{ arrows[s.trend] }}</span
-        >
-      }
       <span class="dashboard__phase">{{ phaseText() }}</span>
       <span class="dashboard__clock" data-dashboard-hour>{{ hourText() }}</span>
       <span class="dashboard__speed" data-dashboard-speed

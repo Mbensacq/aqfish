@@ -226,6 +226,11 @@
   white-space: nowrap;
 }
 
+.dashboard__season {
+  // Saison du bassin (#858), séparée du moment de la journée qui suit.
+  margin-right: 4px;
+}
+
 .dashboard__day {
   flex: none;
   width: 18px;
@@ -270,6 +275,15 @@
 
   .dashboard--folded {
     width: auto;
+  }
+
+  // Au plus étroit, la ligne de la simulation passe à la ligne quand la saison du bassin
+  // (#858) s'y ajoute ; sans saison, rien ne change.
+  @media (max-width: 379px) {
+    .dashboard__sim:has(.dashboard__season) {
+      flex-wrap: wrap;
+      row-gap: 2px;
+    }
   }
 
   .dashboard__toggle,
