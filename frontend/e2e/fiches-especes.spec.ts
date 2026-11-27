@@ -35,7 +35,8 @@ test.describe('Fiches d’espèces (#237)', () => {
     await neon.click();
     await expect(sheet(page)).toHaveAccessibleName(/Fiche : Néon/);
     await expect(neon).toHaveAttribute('aria-expanded', 'true');
-    await expect(sheet(page).locator('[data-sheet-field]')).toHaveCount(11);
+    // Onze lignes de fiche, puis l'âge des néons du bac et la durée de vie moyenne (#857).
+    await expect(sheet(page).locator('[data-sheet-field]')).toHaveCount(13);
     await expect(sheet(page).locator('[data-sheet-status]').first()).toHaveText(
       'Approximation de jeu',
     );
