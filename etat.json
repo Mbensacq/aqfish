@@ -11588,6 +11588,12 @@
           "debut": "2026-11-27T13:41:46.038Z",
           "fin": "2026-11-27T14:07:32.394Z",
           "note": "Verdict OK, 0 bug, captures c319 publiées (188/189 identiques, guide instable connu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T14:08:13.270Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
