@@ -11548,10 +11548,10 @@
           "note": "PR #871 : cycle lunaire et nuits du récif (ADR 0189), CI verte ; jour identique à l'octet, e2e complet laissé à la CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T12:00:52.989Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T12:22:55.884Z",
+          "note": "Verdict OK, 0 bug, captures c318 publiées (jour identique ; guide 12 px sous charge, stable seule)"
         }
       },
       "metriques": {}
