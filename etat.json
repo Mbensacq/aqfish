@@ -11612,6 +11612,12 @@
           "debut": "2026-11-27T14:42:29.368Z",
           "fin": "2026-11-27T14:42:58.925Z",
           "note": "Issue #868 : suites de la revue du vieillissement, captures stables + relevés d'âge (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T14:43:49.535Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
