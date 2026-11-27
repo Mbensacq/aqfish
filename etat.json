@@ -11408,6 +11408,12 @@
           "debut": "2026-11-27T02:14:10.225Z",
           "fin": "2026-11-27T02:22:01.469Z",
           "note": "Verdict OK, 0 bug, captures c314 publiées (179/180 identiques, salvinia 11 px)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T02:22:37.011Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
