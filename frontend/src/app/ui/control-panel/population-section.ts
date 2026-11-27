@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { NO_AGES, type AgeReadout } from '../../sim/aging-text';
 import type { CareMode } from '../../sim/care-mode';
 import { unsuitableAnimals, unsuitableLine } from '../../sim/care-return';
 import { mixWarnings } from '../../sim/compatibility';
@@ -278,6 +279,7 @@ export function speciesSliderLabel(species: SpeciesId): string {
           <app-species-sheet
             class="population__wide"
             [entry]="entry"
+            [ages]="ages()[id]"
             (closed)="closeSheet(id, $event)"
           />
         }
@@ -321,6 +323,8 @@ export class PopulationSection {
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres. */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
+  /** Âges extrêmes de chaque espèce du bac (#857), donnés à la fiche ouverte. */
+  readonly ages = input<AgeReadout>(NO_AGES);
   /** Plafond d'animaux de la pièce atteint (#392) : message de l'hôte, sinon `null`. */
   readonly populationNotice = input<string | null>(null);
   /** Capacité du bac (#809) : occupation, alerte d'un bac trop plein, raisons des refus. */

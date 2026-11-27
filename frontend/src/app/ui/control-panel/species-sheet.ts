@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { ageRows, type AgeSpan } from '../../sim/aging-text';
 import type { CatalogEntry } from '../../sim/species-catalog';
 import { sheetNotes, sheetRows } from '../../sim/species-sheet';
 
@@ -60,9 +61,15 @@ import { sheetNotes, sheetRows } from '../../sim/species-sheet';
 export class SpeciesSheet {
   /** Espèce de la fiche, telle que le catalogue de l'environnement la décrit. */
   readonly entry = input.required<CatalogEntry>();
+  /** Âges extrêmes de l'espèce dans le bac (#857) ; absents : aucun animal de l'espèce. */
+  readonly ages = input<AgeSpan | undefined>(undefined);
   /** Demande de fermeture : l'évènement Échap à arrêter, ou `undefined` (bouton). */
   readonly closed = output<Event | undefined>();
 
   protected readonly notes = computed(() => sheetNotes(this.entry().species));
-  protected readonly rows = computed(() => sheetRows(this.entry().species));
+  /** Lignes de la fiche, puis l'âge dans le bac et la durée de vie moyenne (#857). */
+  protected readonly rows = computed(() => [
+    ...sheetRows(this.entry().species),
+    ...ageRows(this.entry().species, this.ages()),
+  ]);
 }

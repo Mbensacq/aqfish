@@ -51,9 +51,8 @@ import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { MaintenanceTask } from '../../sim/maintenance';
 import { worldReview, type ReviewPoint } from '../../sim/bilan';
 import type { TreatmentKind } from '../../sim/treatment';
-import { hasAlgae } from '../../sim/algae';
 import { hasFeeder } from '../../sim/auto-feeder';
-import { lampReadout, type LampReadout } from '../../sim/lamp';
+import { shownLampReadout } from '../../sim/lamp';
 import { type WaterKit } from '../../sim/water-test';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
 import { PhotoController } from './photo-controller';
@@ -343,6 +342,8 @@ export class AquariumHost {
   readonly populationMax = this.readouts.populationMax;
   /** Plafond d'animaux de la pièce atteint (#392, ADR 0096) : message en clair, sinon `null`. */
   readonly populationNotice = this.readouts.populationNotice;
+  /** Âges extrêmes de chaque espèce du bac (#857), pour les fiches et le wiki. */
+  readonly ages = this.readouts.ages;
   /** Capacité du bac affiché (#809, ADR 0172) : occupation, alerte et raisons des refus. */
   readonly capacity = this.readouts.capacity;
   /** Relevé de l'eau affiché par le tableau de bord et le panneau (#207, #256), au dixième. */
@@ -382,10 +383,8 @@ export class AquariumHost {
   /** Vrai si un distributeur peut être posé dans le bac affiché (#583). */
   readonly feederAvailable = computed(() => hasFeeder(this.environment()));
   /** Ligne « Lampe » du tableau de bord (#584) ; `null` pour un bac sans lampe réglable. */
-  readonly lampReadout = computed<LampReadout | null>(() =>
-    hasAlgae(this.environment())
-      ? lampReadout({ lighting: this.lighting(), lampOn: this.lampOn() })
-      : null,
+  readonly lampReadout = computed(() =>
+    shownLampReadout(this.environment(), { lighting: this.lighting(), lampOn: this.lampOn() }),
   );
   /**
    * Suivi du bac affiché hors du monde (#511, #512, #513, #581, #696) : entretien, historique
