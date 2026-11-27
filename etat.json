@@ -11460,7 +11460,7 @@
       "debut": "2026-11-27T04:55:50.687Z",
       "type": "fonctionnalite",
       "issue": 857,
-      "pr": null,
+      "pr": 867,
       "version": null,
       "phases": {
         "planif": {
