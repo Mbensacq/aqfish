@@ -11542,10 +11542,10 @@
           "note": "Issue #856 : Cycle lunaire et nuits du récif (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T10:59:43.310Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T12:00:14.486Z",
+          "note": "PR #871 : cycle lunaire et nuits du récif (ADR 0189), CI verte ; jour identique à l'octet, e2e complet laissé à la CI"
         }
       },
       "metriques": {}
