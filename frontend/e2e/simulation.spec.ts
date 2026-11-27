@@ -36,6 +36,16 @@ async function openScene(page: Page, search = ''): Promise<string[]> {
   return errors;
 }
 
+/** Pas de simulation et instant `performance.now()` (ms) lus ensemble dans la page. */
+async function readClock(page: Page): Promise<{ tick: number; ms: number }> {
+  const clock = await page.evaluate(() => ({
+    tick: document.querySelector('app-aquarium-host')?.getAttribute('data-aqfish-tick') ?? '',
+    ms: performance.now(),
+  }));
+  expect(clock.tick, 'attribut data-aqfish-tick').toMatch(/^\d+$/);
+  return { tick: Number(clock.tick), ms: clock.ms };
+}
+
 async function readWorld(page: Page): Promise<WorldProbe> {
   const host = page.locator('app-aquarium-host');
   const [tick, seed] = await Promise.all([
@@ -131,15 +141,16 @@ test.describe('Simulation en mode capture', () => {
 test.describe('Simulation hors capture', () => {
   test('le monde avance en temps réel par pas fixes, sans emballement', async ({ page }) => {
     const errors = await openScene(page, '?seed=7');
-    const start = await readWorld(page);
-    const startMs = await page.evaluate(() => performance.now());
-    expect(start.seed).toBe(7);
+    expect((await readWorld(page)).seed).toBe(7);
+    // Pas et horloge lus dans la même évaluation (#870) : lus en deux allers-retours, des pas
+    // faits entre les deux lectures (machine chargée) étaient comptés sans leur durée.
+    const start = await readClock(page);
 
     // ~0,5 s d'observation : assez pour qu'un double pas par image dépasse la borne ci-dessous.
     await expect.poll(async () => (await readWorld(page)).tick).toBeGreaterThan(start.tick + 30);
 
-    const end = await readWorld(page);
-    const elapsedSeconds = ((await page.evaluate(() => performance.now())) - startMs) / 1000;
+    const end = await readClock(page);
+    const elapsedSeconds = (end.ms - start.ms) / 1000;
     // Jamais plus de pas que le temps réel écoulé. Marge : décalage entre l'horodatage rAF et
     // performance.now(), plus le reste de l'accumulateur (au plus MAX_STEPS_PER_FRAME pas).
     expect(end.tick - start.tick).toBeLessThanOrEqual(
