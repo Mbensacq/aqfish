@@ -135,8 +135,10 @@ Règles :
 `sim/tank-water-volume.ts` (volume d'eau réel, décor et berge déduits) ; S3 vert.
 **Branché** (#809, ADR 0172) : `sim/tank-capacity-limits.ts` borne les compteurs en mode soins
 (raison du refus sous la tuile), affiche l'occupation et le volume réel (section « Population »,
-bilan du bac) et signale un bac trop plein (section « Population », message d'import). Reste à
-arbitrer : bassin et paludarium par défaut au-delà de leur capacité (`docs/ESPECES.md` point 19).
+bilan du bac) et signale un bac trop plein (section « Population », message d'import). Bassin et
+paludarium par défaut ramenés sous leur capacité (#811, ADR 0173, `docs/ESPECES.md` point 19).
+#729 fermée au cycle 314 ; reste S3 **jouable** dans l'interface (le poisson rouge ne vit qu'au
+bassin) : #862.
 
 ### 3.2 Compatibilités
 
