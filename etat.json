@@ -11404,10 +11404,10 @@
           "note": "PR #863 : rétro s45 (ROADMAP v1.33/v1.34, ECOSYSTEME), CI verte ; #729 auditée et fermée (reste #862), 15 rétros soldées fermées ; unitaires 6523/6523 sur main"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T02:14:10.225Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T02:22:01.469Z",
+          "note": "Verdict OK, 0 bug, captures c314 publiées (179/180 identiques, salvinia 11 px)"
         }
       },
       "metriques": {}
