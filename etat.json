@@ -11500,10 +11500,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T07:46:11.189Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T07:46:34.708Z",
+          "note": "Issue #859 : Mue des crevettes et exuvies (S)"
         }
       },
       "metriques": {}
