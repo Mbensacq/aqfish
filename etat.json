@@ -11353,7 +11353,7 @@
       "type": "dette",
       "issue": 846,
       "pr": 855,
-      "version": null,
+      "version": "v1.33.5",
       "phases": {
         "planif": {
           "statut": "termine",
