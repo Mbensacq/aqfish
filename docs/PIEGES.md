@@ -1341,6 +1341,13 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Température de référence du bassin : `ambientTemperature`, pas `WATER_TEMPERATURES`**
+  (cycle 315, #858, ADR 0186) : au bassin, la référence suit la saison (`WaterState.ambient`, de
+  4 à 24 °C). Comparer l'eau à `WATER_TEMPERATURES.bassin` (18 °C) rend l'eau « mauvaise » et
+  déclenche les points blancs en hiver. Pour une jauge, passer `sampleReference(sample)` à
+  `temperatureLevel`. Pour tester un bassin en hiver sans avancer des millions de pas, poser
+  `tick` et `time` du monde (`pond-season.spec.ts`, `e2e/koi.spec.ts`). (2026-11-27)
+
 - **Modèle agrandi pour la lisibilité : la charge dans l'eau suivait la taille du modèle**
   (cycle 303, #836) : `waterLoad` prend le cube de `bodyLength` ; la crevette cerise a un modèle
   de 10 cm pour 3 cm en vrai, si bien que dix crevettes dans 30 L faisaient monter l'ammoniaque à
