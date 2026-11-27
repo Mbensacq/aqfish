@@ -1,1 +1,2 @@
-Cycle 319 — branche cycle PR #873 (commit 3dd81200), graine par défaut, 188/189 captures identiques à c318 au pixel près ; three-quarter-guide.png diffère (instabilité connue sous charge).
+Cycle 320 — branche cycle/c320-suites-vieillissement, PR #874, commit 71e7a61e, graine par défaut, 189 captures.
+Identiques au pixel près à c319 (cmp : 189/189).
