@@ -11446,10 +11446,10 @@
           "note": "Verdict RÉSERVES (critères 4-5 reportés en #864), 0 bug, captures c315 publiées (identiques à c314)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T04:25:59.839Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T04:55:12.423Z",
+          "note": "PR #865 fusionnée → v1.34.0 (release CI OK, CI main verte), #858 fermée ; remarques mineures en #866"
         }
       },
       "metriques": {}
