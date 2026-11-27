@@ -11620,10 +11620,10 @@
           "note": "PR #874 : #868 pts 1+2, CI verte ; tampon AgeReadoutBuffer (+8 tests, 6652), captures 189/189 identiques à c319 ; pt1 = coins arrondis (pas polices), PIEGES ; pied de page d'attribution réinséré dans la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T16:01:17.034Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T16:47:45.765Z",
+          "note": "Verdict OK, 0 bug, captures c320 publiées (189/189 identiques à c319), mutation fichier 93,75 %"
         }
       },
       "metriques": {}
