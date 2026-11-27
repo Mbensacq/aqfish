@@ -142,6 +142,25 @@ describe('DashboardFrame (#256)', () => {
     await fixture.whenStable();
   }
 
+  it('saison du bassin (#858) : mot et flèche, phrase lue ; absente pour un bac intérieur', async () => {
+    const season = () => root().querySelector<HTMLElement>('[data-dashboard-season]');
+    expect(season()).toBeNull();
+    // Pas 0 : 19 mai, printemps, l'eau se réchauffe.
+    await set({ environment: 'bassin', tick: 0, ambient: 18, temperature: 18 });
+    expect(season()?.textContent?.trim()).toBe('Printemps ↑');
+    expect(season()?.getAttribute('data-season')).toBe('printemps');
+    expect(season()?.getAttribute('data-season-trend')).toBe('hausse');
+    expect(season()?.getAttribute('title')).toBe('Saison : printemps, l’eau se réchauffe');
+    expect(root().querySelector('[data-dashboard-sim]')?.getAttribute('title')).toMatch(
+      /^Simulation : printemps, l’eau se réchauffe, /,
+    );
+    // Eau à la température de saison en hiver : jauge au vert.
+    await set({ ambient: 4, temperature: 4.2 });
+    expect(gauge('temperature')?.getAttribute('data-level')).toBe('vert');
+    await set({ environment: 'tropical', ambient: undefined, temperature: 24 });
+    expect(season()).toBeNull();
+  });
+
   it('déplié au départ : cinq jauges nommées, dans l’ordre, chacune un `meter` lu', () => {
     expect(root().querySelector('[data-dashboard]')?.getAttribute('aria-label')).toBe(
       'Tableau de bord de l’eau',

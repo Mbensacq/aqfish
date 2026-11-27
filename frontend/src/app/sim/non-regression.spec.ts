@@ -39,8 +39,9 @@ const FEEDINGS = [
 const EXPECTED: Record<string, readonly string[]> = {
   tropical: ['12abca12341ad0', '0d03fa0abe8733', '0bdd48b3320374'],
   'tropical+nourri': ['058bb8a4023c98', '0dbb5364298c81', '06b15e04ca27c0'],
-  bassin: ['1e3c7476a21d69', '112a9a830db7f2', '18b0001327d739'],
-  'bassin+nourri': ['13fa3799d950fa', '1d318e8e5d31bf', '1f853102405ce8'],
+  // Bassin : température ambiante saisonnière dans l'eau (#858, ADR 0186).
+  bassin: ['1c813421dc97db', '01afb0fb98a3ec', '0e68903b86b69d'],
+  'bassin+nourri': ['1d2f82c9ff70f3', '1e2acc3ec6a318', '1a35819f525809'],
   paludarium: ['01d1aa2f8ca936', '05a20e33a26f3e', '0695e31a4be244'],
   'paludarium+nourri': ['136b46892345a9', '0359b17f92e775', '07e92d66e258d1'],
   recif: ['1604a58713acdb', '12292b8d19f16e', '0cd70b9bae44de'],

@@ -55,7 +55,8 @@ import {
  *   et `NITRATE_PER_NITRITE` ;
  * - nitrates : s'accumulent, retirés seulement par un changement d'eau (`changeWaterInPlace`) ;
  * - température : tend vers celle visée (consigne du chauffage `heater` si elle est réglée,
- *   sinon celle de l'environnement, `WATER_TEMPERATURES` ; issue #207), constante de temps
+ *   sinon la température de référence, `ambientTemperature` : saisonnière au bassin, issue
+ *   #858, celle de l'environnement ailleurs ; issue #207), constante de temps
  *   `TEMPERATURE_TIME_CONSTANT` ;
  * - pH : baisse lente avec la charge, remonte vers celui de l'eau neuve au changement d'eau
  *   (`sim/water-ph.ts`, issue #236, ADR 0057) ; les feuilles de catappa le tirent vers un
@@ -160,6 +161,13 @@ export interface WaterState {
   readonly carbon?: true;
   /** Secondes d'attente avant la prochaine dose de régulateur de pH (issue #531) ; absent : aucune. */
   readonly phRegulatorWait?: number;
+  /**
+   * Température ambiante saisonnière, en °C, dans [`MIN_WATER_TEMPERATURE`,
+   * `MAX_WATER_TEMPERATURE`] (issue #858, ADR 0186) : celle du bassin extérieur au jour de jeu,
+   * posée à chaque pas par `stepPondSeasonInPlace` (`sim/pond-season.ts`). Absente : celle de
+   * l'environnement (`WATER_TEMPERATURES`), comme pour tout bac intérieur.
+   */
+  readonly ambient?: number;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -194,11 +202,21 @@ export const MIN_HEATER_TEMPERATURE = 16;
 export const MAX_HEATER_TEMPERATURE = 32;
 
 /**
+ * Température de référence de l'eau `water` d'un bac de l'environnement `environment` (issue
+ * #858) : la température ambiante saisonnière (`ambient`) si elle est posée, sinon celle de
+ * l'environnement (`WATER_TEMPERATURES`). Les seuils de qualité, d'alerte et de stress s'y
+ * comparent.
+ */
+export function ambientTemperature(water: WaterState, environment: EnvironmentId): number {
+  return water.ambient ?? WATER_TEMPERATURES[environment];
+}
+
+/**
  * Température visée par l'eau `water` d'un bac de l'environnement `environment` : la consigne
- * du chauffage si elle est réglée, sinon la température de l'environnement.
+ * du chauffage si elle est réglée, sinon la température de référence (`ambientTemperature`).
  */
 export function targetTemperature(water: WaterState, environment: EnvironmentId): number {
-  return water.heater ?? WATER_TEMPERATURES[environment];
+  return water.heater ?? ambientTemperature(water, environment);
 }
 
 /**
@@ -550,6 +568,7 @@ const OPTIONAL_ORDER = [
   'plantGrowth',
   'gh',
   'kh',
+  'ambient',
 ] as const satisfies readonly (keyof WaterState)[];
 
 /** Lecture d'une propriété propre de la sauvegarde (`undefined` si absente ou héritée). */
@@ -564,6 +583,7 @@ type SectionReader = (read: FieldReader, extras: WaterExtras) => string | null;
 /** Groupes de champs facultatifs, dans l'ordre des contrôles (la première erreur l'emporte). */
 const SECTIONS: readonly SectionReader[] = [
   readHeaterField,
+  readAmbientField,
   readPhField,
   readCatappaField,
   readLightingField,
@@ -656,6 +676,22 @@ function readHeaterField(read: FieldReader, extras: WaterExtras): string | null 
     return `eau : heater doit être un nombre dans [${MIN_HEATER_TEMPERATURE}, ${MAX_HEATER_TEMPERATURE}]`;
   }
   extras.heater = heater;
+  return null;
+}
+
+/**
+ * Lit `ambient` (température ambiante saisonnière, issue #858) ; erreur s'il est présent mais
+ * hors [`MIN_WATER_TEMPERATURE`, `MAX_WATER_TEMPERATURE`].
+ */
+function readAmbientField(read: FieldReader, extras: WaterExtras): string | null {
+  const ambient = read('ambient');
+  if (ambient === undefined) {
+    return null;
+  }
+  if (!isIn(ambient, MIN_WATER_TEMPERATURE, MAX_WATER_TEMPERATURE)) {
+    return `eau : ambient doit être un nombre dans [${MIN_WATER_TEMPERATURE}, ${MAX_WATER_TEMPERATURE}]`;
+  }
+  extras.ambient = ambient;
   return null;
 }
 

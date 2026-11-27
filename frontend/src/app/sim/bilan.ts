@@ -19,7 +19,6 @@ import {
   AMMONIA_PER_LOAD_LITER,
   NITRITE_CONVERSION,
   WATER_CHANGE_SHARE,
-  WATER_TEMPERATURES,
   waterLiters,
   waterLoad,
 } from './water';
@@ -29,6 +28,7 @@ import {
   formatGaugeValue,
   formatTenth,
   QUALITY_LEVELS,
+  sampleReference,
   temperatureLevel,
   waterSample,
   type GaugeLevel,
@@ -313,7 +313,8 @@ function hardnessPoint(
 }
 
 function temperaturePoint(sample: WaterSample): ReviewPoint | null {
-  const severity = severityOf(temperatureLevel(sample.temperature, sample.environment));
+  const reference = sampleReference(sample);
+  const severity = severityOf(temperatureLevel(sample.temperature, sample.environment, reference));
   if (severity === null) {
     return null;
   }
@@ -322,7 +323,7 @@ function temperaturePoint(sample: WaterSample): ReviewPoint | null {
     severity,
     title: 'Température à corriger',
     measure: Number.isFinite(sample.temperature)
-      ? `Eau à ${formatTenth(sample.temperature)} °C pour ${WATER_TEMPERATURES[sample.environment]} °C attendus`
+      ? `Eau à ${formatTenth(sample.temperature)} °C pour ${formatTenth(reference)} °C attendus`
       : INVALID,
     action: 'Régler le chauffage (Réglages, Eau et matériel)',
   };

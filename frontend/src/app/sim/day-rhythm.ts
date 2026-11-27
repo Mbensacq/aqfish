@@ -1,4 +1,5 @@
 import { clampIntensity } from './daylight';
+import { coldRest } from './pond-season';
 import type { SpeciesId } from './species';
 
 /**
@@ -79,4 +80,13 @@ export function nightRest(species: string, intensity: number): number {
 /** Facteur du déplacement d'un pas pour un repos `rest` ∈ [0, 1] : exactement 1 à 0. */
 export function nightPace(rest: number): number {
   return 1 - NIGHT_SLOWDOWN * rest;
+}
+
+/**
+ * Poids de repos d'un nageur (issue #858) : le plus fort du repos de nuit (`nightRest`, à
+ * l'intensité du jour `intensity`) et du repos dû au froid (`coldRest`, eau à `temperature`
+ * °C, `sim/pond-season.ts`). Sans froid, exactement `nightRest` : nage d'avant au bit près.
+ */
+export function restWeight(species: string, intensity: number, temperature: number): number {
+  return Math.max(nightRest(species, intensity), coldRest(species, temperature));
 }

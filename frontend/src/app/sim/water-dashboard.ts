@@ -162,6 +162,11 @@ export interface WaterSample {
   readonly chlorine?: number;
   /** Charbon actif avec un médicament dans l'eau (issue #531) ; absent : non. */
   readonly carbonAgainstMedication?: true;
+  /**
+   * Température de référence saisonnière du bassin, en °C (`WaterState.ambient`, issue #858) ;
+   * facultative : absente, celle de l'environnement (`WATER_TEMPERATURES`).
+   */
+  readonly ambient?: number;
 }
 
 /** Relevé exact de l'eau `water` d'un bac de l'environnement `environment` au pas `tick`. */
@@ -181,6 +186,7 @@ export function waterSample(
     ...(water.algae === undefined ? {} : { algae: algaeCoverage(water.algae) }),
     ...(water.chlorine === undefined ? {} : { chlorine: water.chlorine }),
     ...(carbonAgainstMedication(water) ? { carbonAgainstMedication: true as const } : {}),
+    ...(water.ambient === undefined ? {} : { ambient: water.ambient }),
   };
 }
 
@@ -276,14 +282,25 @@ export interface DashboardGauge {
 }
 
 /**
- * Niveau de la température `temperature` dans l'environnement `environment` : écart à sa
- * température (`WATER_TEMPERATURES`), dans un sens comme dans l'autre (`levelOf` : non fini
- * → rouge).
+ * Niveau de la température `temperature` dans l'environnement `environment` : écart à la
+ * température de référence `reference` (par défaut celle de l'environnement,
+ * `WATER_TEMPERATURES` ; saisonnière au bassin, `sampleReference`, #858), dans un sens comme
+ * dans l'autre (`levelOf` : non fini → rouge).
  */
-export function temperatureLevel(temperature: number, environment: EnvironmentId): GaugeLevel {
-  return QUALITY_LEVELS[
-    levelOf(Math.abs(temperature - WATER_TEMPERATURES[environment]), TEMPERATURE_THRESHOLDS)
-  ];
+export function temperatureLevel(
+  temperature: number,
+  environment: EnvironmentId,
+  reference: number = WATER_TEMPERATURES[environment],
+): GaugeLevel {
+  return QUALITY_LEVELS[levelOf(Math.abs(temperature - reference), TEMPERATURE_THRESHOLDS)];
+}
+
+/**
+ * Température de référence du relevé `sample`, en °C : saisonnière au bassin (`ambient`,
+ * issue #858), sinon celle de l'environnement.
+ */
+export function sampleReference(sample: WaterSample): number {
+  return sample.ambient ?? WATER_TEMPERATURES[sample.environment];
 }
 
 /** Niveau d'un composé (`levelOf` sur ses seuils : non fini → rouge). */
@@ -349,7 +366,7 @@ export function dashboardGauges(
     const raw = sample[id];
     const level =
       id === 'temperature'
-        ? temperatureLevel(raw, sample.environment)
+        ? temperatureLevel(raw, sample.environment, sampleReference(sample))
         : id === 'ph'
           ? PH_ZONE_LEVELS[readout.phZone]
           : compoundLevel(id, raw);

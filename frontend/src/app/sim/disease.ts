@@ -2,7 +2,7 @@ import { deriveSeed } from '../core/random/prng';
 import { livesIn, type EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import { assertTimeStep } from './time-step';
-import { WATER_TEMPERATURES, targetTemperature, type WaterState } from './water';
+import { ambientTemperature, targetTemperature, type WaterState } from './water';
 import { toxicAmmonia } from './water-conditioner';
 import { COMPOUND_THRESHOLDS, TEMPERATURE_THRESHOLDS } from './water-quality';
 
@@ -99,7 +99,8 @@ export function catchesIch(species: SpeciesId, environment: EnvironmentId): bool
 
 /**
  * Nombre de causes de stress du bac (0 à 4) pour son eau `water` dans l'environnement
- * `environment` : écart de température à l'environnement ≥ `ICH_TEMPERATURE_GAP`, écart à la
+ * `environment` : écart de température à celle de référence (`ambientTemperature`, saisonnière
+ * au bassin, #858) ≥ `ICH_TEMPERATURE_GAP`, écart à la
  * température visée ≥ `ICH_SHOCK_GAP` (changement brusque), ammoniaque ≥ `ICH_AMMONIA`,
  * nitrites ≥ `ICH_NITRITE`. Une valeur non finie (état corrompu) ne compte pas : la maladie
  * ne naît que d'un stress avéré.
@@ -107,7 +108,7 @@ export function catchesIch(species: SpeciesId, environment: EnvironmentId): bool
 export function ichStress(water: WaterState, environment: EnvironmentId): number {
   const t = water.temperature;
   let causes = 0;
-  if (Math.abs(t - WATER_TEMPERATURES[environment]) >= ICH_TEMPERATURE_GAP) {
+  if (Math.abs(t - ambientTemperature(water, environment)) >= ICH_TEMPERATURE_GAP) {
     causes += 1;
   }
   if (Math.abs(t - targetTemperature(water, environment)) >= ICH_SHOCK_GAP) {

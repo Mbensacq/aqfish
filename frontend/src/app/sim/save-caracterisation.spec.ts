@@ -7,7 +7,8 @@ import { createWaterHistory, markWaterChange, savedWaterHistory } from './water-
 import { migrateSchema1, parseSave, serializeRoom } from './room-save';
 import { parseWorld, serializeWorld } from './save';
 import { advance, createWorld, feed } from './world';
-import type { PopulationEntry } from './world-types';
+import { WATER_TEMPERATURES, type MutableWaterState } from './water';
+import type { PopulationEntry, World } from './world-types';
 
 /**
  * Caractérisation de la relecture des sauvegardes (`parseWorld`, `parseSave`), lot 5 du
@@ -52,13 +53,28 @@ const DECOR_BEFORE_847: Partial<Record<(typeof ENVIRONMENT_IDS)[number], readonl
   paludarium: [],
 };
 
+/**
+ * Eau du bassin d'avant #858 (ADR 0186) : sans température ambiante saisonnière, à la
+ * température fixe de l'environnement (seuls ces deux champs en dépendent dans les 150 premiers
+ * pas : les koïs nagent comme avant au-dessus de 10 °C) ; les sauvegardes caractérisées restent
+ * celles qui ont figé les résultats.
+ */
+function waterBefore858(world: World): World {
+  if (world.environment !== 'bassin') {
+    return world;
+  }
+  const water: MutableWaterState = { ...world.water, temperature: WATER_TEMPERATURES.bassin };
+  delete water.ambient;
+  return { ...world, water };
+}
+
 /** Sauvegarde réelle (schéma 1) d'un bac avancé et nourri de chaque environnement. */
 function realWorld(environment: (typeof ENVIRONMENT_IDS)[number]): ReturnType<typeof advance> {
   const env = environmentById(environment);
   const population = POPULATIONS_BEFORE_811[environment] ?? env.population;
   const decor = DECOR_BEFORE_847[environment] ?? env.decor;
   const world = createWorld(42, population, [], decor, environment);
-  return advance(feed(advance(world, 120), 0.1, 0), 30);
+  return waterBefore858(advance(feed(advance(world, 120), 0.1, 0), 30));
 }
 
 const TROPICAL = JSON.parse(serializeWorld(realWorld('tropical'))) as Json;
