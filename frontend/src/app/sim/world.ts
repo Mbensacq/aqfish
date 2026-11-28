@@ -80,7 +80,6 @@ import {
   environmentById,
   environmentWater,
   isPondShapeable,
-  isTankResizable,
   PLACE_CACHE_LIMIT,
   placeDimensions,
   placeEnvironment,
@@ -151,7 +150,7 @@ import {
 } from './pond-shape';
 import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type SwimBounds } from './swimmer';
-import { clampTankDimensionsIn } from './tank-limits';
+import { placeTankDimensions } from './tank-limits';
 import { assertTimeStep } from './time-step';
 import {
   initialMaintenance,
@@ -225,7 +224,7 @@ export function createWorld(
   assertSeed(seed);
   const environment = placeEnvironment(place);
   environmentById(environment);
-  const dimensions = worldDimensions(place);
+  const dimensions = placeTankDimensions(place);
   const shape = worldShape(place);
   // Lieu du monde : l'environnement seul, ou avec ses dimensions réglées (bornées) ou sa forme.
   const where: Place =
@@ -276,21 +275,6 @@ export function createWorld(
     nextFishId: entities.length,
     water: freshWater(environment),
   };
-}
-
-/**
- * Dimensions réglées d'un lieu, bornées à celles de son environnement (`clampTankDimensionsIn`,
- * #885), ou `undefined` sans réglage.
- * @throws RangeError si l'environnement du lieu n'a pas de dimensions réglables.
- */
-function worldDimensions(place: Place) {
-  if (typeof place === 'string' || place.dimensions === undefined) {
-    return undefined;
-  }
-  if (!isTankResizable(place.environment)) {
-    throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
-  }
-  return clampTankDimensionsIn(place.environment, place.dimensions);
 }
 
 /**

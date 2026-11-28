@@ -5,6 +5,7 @@ import { MAX_DECOR_ITEMS } from '../../sim/decor-edit';
 import { COLD_TANK_DIMENSIONS, type EnvironmentId } from '../../sim/environment';
 import { MAX_ROOM_ITEMS } from '../../sim/room';
 import { DEFAULT_TANK, type TankDimensions } from '../../sim/tank';
+import { tankLimits } from '../../sim/tank-limits';
 import {
   DECOR_TOOLS,
   DecorEditor,
@@ -279,6 +280,15 @@ describe('DecorEditor', () => {
     expect(slider('height').value).toBe('45');
     expect(slider('height').getAttribute('aria-valuetext')).toBe('45 cm');
     expect(slider('width').min).toBe('60');
+    // Maximum et pas dérivés eux aussi de `tankLimits` (#891), pas codés en dur.
+    const limits = tankLimits('eaufroide');
+    for (const k of ['width', 'depth', 'height'] as const) {
+      const r = limits[k];
+      expect([slider(k).min, slider(k).max, slider(k).step]).toEqual(
+        [r.min, r.max, r.step].map((v) => String(Math.round(v * 100))),
+      );
+    }
+    expect([slider('height').max, slider('height').step]).toEqual(['90', '5']);
     slider('width').value = '120';
     slider('width').dispatchEvent(new Event('change'));
     expect(host().dims).toEqual([{ width: 1.2, height: 0.45, depth: 0.45 }]);

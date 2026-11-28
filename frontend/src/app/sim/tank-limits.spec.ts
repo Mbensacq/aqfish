@@ -1,7 +1,12 @@
-import { COLD_TANK_DIMENSIONS, ENVIRONMENT_IDS, environmentById } from './environment';
+import {
+  COLD_TANK_DIMENSIONS,
+  ENVIRONMENT_IDS,
+  environmentById,
+  isTankResizable,
+} from './environment';
 import { parseWorld, serializeWorld } from './save';
 import { TANK_LIMITS } from './tank';
-import { clampTankDimensionsIn, tankLimits } from './tank-limits';
+import { clampTankDimensionsIn, placeTankDimensions, tankLimits } from './tank-limits';
 import { setTankDimensionsInPlace } from './tank-resize';
 import { createDefaultWorld } from './world';
 
@@ -51,5 +56,36 @@ describe('tankLimits (#885)', () => {
     // La sauvegarde relue garde aussi les 45 cm.
     const reread = parseWorld(serializeWorld(world));
     expect(reread.ok && reread.world.dimensions).toEqual({ width: 1.2, height: 0.45, depth: 0.45 });
+  });
+});
+
+/** Dimensions réglées d'un lieu (#891, extrait de `world.ts`) : absentes, bornées ou refusées. */
+describe('placeTankDimensions (#891)', () => {
+  it('sans réglage : undefined (identifiant seul ou lieu sans dimensions)', () => {
+    expect(placeTankDimensions('tropical')).toBeUndefined();
+    expect(placeTankDimensions({ environment: 'tropical' })).toBeUndefined();
+  });
+
+  it('dimensions bornées à celles de l’environnement, extrêmes compris', () => {
+    expect(
+      placeTankDimensions({
+        environment: 'eaufroide',
+        dimensions: { width: 0, height: 0, depth: 0 },
+      }),
+    ).toEqual(clampTankDimensionsIn('eaufroide', { width: 0, height: 0, depth: 0 }));
+    expect(
+      placeTankDimensions({
+        environment: 'tropical',
+        dimensions: { width: 99, height: 99, depth: 99 },
+      }),
+    ).toEqual({ width: 2, height: 0.9, depth: 0.9 });
+  });
+
+  it('environnement non réglable : RangeError', () => {
+    const fixed = ENVIRONMENT_IDS.find((id) => !isTankResizable(id))!;
+    expect(fixed).toBeDefined();
+    expect(() =>
+      placeTankDimensions({ environment: fixed, dimensions: COLD_TANK_DIMENSIONS }),
+    ).toThrow(RangeError);
   });
 });
