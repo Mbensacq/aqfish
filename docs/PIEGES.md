@@ -2227,5 +2227,5 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   simulation à la ligne dès 1280 px (captures changées). Le bouton « Eau » est plus large à l'état
   « Mauvaise » qu'à « Bonne » : à 768 px, eau saine sur une ligne, eau en alerte sur deux. Sur
   tablette, l'aide-mémoire (posé à 129 px) suit alors `--aqfish-frame-height`. Mesurer les
-  boîtes (`e2e/bandeau-haut-largeurs.spec.ts`), pas seulement le débordement de la fenêtre.
+  boîtes (`e2e/tableau-de-bord.spec.ts`, #881), pas seulement le débordement de la fenêtre.
   (2026-11-28)
