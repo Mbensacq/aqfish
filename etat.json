@@ -11860,10 +11860,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T14:25:14.777Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T14:25:43.774Z",
+          "note": "Issue #885 : libellés éditeur + hauteur bac eau froide, avec bug #881 (S)"
         }
       },
       "metriques": {}
