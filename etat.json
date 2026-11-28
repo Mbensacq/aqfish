@@ -11677,7 +11677,7 @@
       "type": "fonctionnalite",
       "issue": 860,
       "pr": 880,
-      "version": null,
+      "version": "v1.35.0",
       "phases": {
         "planif": {
           "statut": "termine",
