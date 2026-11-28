@@ -87,6 +87,7 @@ import { FIN_ROT_MAX, FIN_ROT_VISIBLE_AT } from '../sim/fin-rot';
 import { VELVET_MAX, VELVET_VISIBLE_AT } from '../sim/velvet';
 import { FUNGUS_MAX, FUNGUS_VISIBLE_AT } from '../sim/fungus';
 import { FRY_GROWTH_TIME, FRY_PALLORS, FRY_SCALES, FRY_STAGES } from '../sim/fry';
+import { GROWTH_SECONDS, JUVENILE_START_SCALE } from '../sim/fish-growth';
 import { DROPSY_ADVANCED_AT, DROPSY_MAX, DROPSY_VISIBLE_AT } from '../sim/dropsy';
 import { PALETTE } from './palette';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
@@ -786,6 +787,31 @@ describe('FishLayer : alevins (#459, #566)', () => {
     const tailSigns = tail.geometry.getAttribute(SIGNS_B_ATTRIBUTE);
     const bodySigns = body.geometry.getAttribute(SIGNS_B_ATTRIBUTE);
     [0, 1, 2, 3].forEach((i) => expect(tailSigns.getY(i)).toBe(bodySigns.getY(i)));
+    layer.dispose();
+  });
+
+  it('jeune né au bac (#876) : taille selon l’âge au temps affiché, adulte à 1', () => {
+    const layer = new FishLayer(NEON, 8);
+    const time = 50_000;
+    const ages = [FRY_GROWTH_TIME, (FRY_GROWTH_TIME + GROWTH_SECONDS) / 2, GROWTH_SECONDS];
+    const fishes: Fish[] = [
+      fishAfterSteps(0, 1),
+      ...ages.map((age, i) => ({ ...fishAfterSteps(i + 1, 1), bornAt: time - age })),
+    ];
+    const frame = { time, landedFood: false, motion: 1 };
+    layer.update(fishes, 1, 0, frame);
+    const scales = [0, 1, 2, 3].map((i) => {
+      const m = layer.bodyMatrixAt(i, new Matrix4());
+      return new Vector3().setFromMatrixColumn(m, 0).length();
+    });
+    expect(scales[0]).toBeCloseTo(1, 6);
+    expect(scales[1]).toBeCloseTo(JUVENILE_START_SCALE, 6);
+    expect(scales[2]).toBeCloseTo((JUVENILE_START_SCALE + 1) / 2, 6);
+    expect(scales[3]).toBeCloseTo(1, 6);
+    // Sans temps affiché : taille adulte, comme avant (#459).
+    layer.update(fishes, 1);
+    const m = layer.bodyMatrixAt(1, new Matrix4());
+    expect(new Vector3().setFromMatrixColumn(m, 0).length()).toBeCloseTo(1, 6);
     layer.dispose();
   });
 

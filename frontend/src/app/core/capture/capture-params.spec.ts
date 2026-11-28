@@ -59,6 +59,7 @@ describe('parseCaptureParams', () => {
       fungus: false,
       dropsy: null,
       fry: false,
+      juveniles: false,
       eggs: false,
       current: null,
       season: null,
@@ -259,6 +260,16 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('?capture=1&courant=fort').current).toBe('fort');
     expect(parseCaptureParams('?capture=1&courant=x').current).toBe('x');
     expect(parseCaptureParams('?capture=1').current).toBeNull();
+  });
+
+  it('lit les jeunes : alevins=jeunes seulement, sans alevins=1 (#876)', () => {
+    const params = parseCaptureParams('?capture=1&alevins=jeunes');
+    expect(params.juveniles).toBe(true);
+    expect(params.fry).toBe(false);
+    for (const value of ['1', 'jeune', 'JEUNES', '']) {
+      expect(parseCaptureParams(`?capture=1&alevins=${value}`).juveniles).toBe(false);
+    }
+    expect(DEFAULT_CAPTURE_PARAMS.juveniles).toBe(false);
   });
 
   it('lit les alevins : alevins=1 seulement (#459)', () => {

@@ -858,6 +858,9 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 
 ## Tests
 
+- **`toBe(-x)` échoue quand `x` vaut 0** (cycle 325, #876) : `toBe` compare avec `Object.is`,
+  et `-0` n'est pas `0`. Une naissance écrite `world.time - age` (0 au temps 0) ne vaut pas
+  `-age` pour `age = 0` : écrire l'attendu par la même expression (`world.time - age`). (2026-11-28)
 - **Ajouter un animal dans un e2e : la capacité du bac peut le refuser** (cycle 291, #809) : en
   mode soins, les compteurs sont bornés par la capacité (ADR 0172). Depuis #811 (ADR 0173), le
   bassin (3 koïs, 86 %) refuse une quatrième koï, le paludarium (2 sonneurs, 79 %) un troisième

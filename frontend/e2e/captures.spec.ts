@@ -299,6 +299,9 @@ test.describe('Captures', () => {
     // Alevins du platy (#674) : platys rouges et leurs alevins pâles aux trois jalons, près des
     // plantes ; guppys retirés pour ne voir que les platys.
     { name: 'three-quarter-alevins-platy', query: `alevins=1&${PLATY_FRY}` },
+    // Croissance des jeunes (#876) : alevins de platy aux trois jalons puis jeunes de plus en
+    // plus grands, encore plus petits que leurs parents.
+    { name: 'three-quarter-jeunes-platy', query: `alevins=jeunes&${PLATY_FRY}` },
     // Jeunes crevettes cerises (#836) : chaque femelle fait éclore ses jeunes, petits et pâles,
     // posés au fond près d'elle ; seules les crevettes restent dans le bac.
     { name: 'front-alevins-crevettes', query: `alevins=1&camera=front&${SHRIMP_COLONY}` },
