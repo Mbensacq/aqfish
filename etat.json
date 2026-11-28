@@ -11872,10 +11872,10 @@
           "note": "PR #890 : libellés éditeur, bornes par environnement (eau froide 45 cm), cadre haut #881, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T15:44:14.436Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T16:25:30.703Z",
+          "note": "Verdict OK, 0 bug, captures c327 publiées (190/192 identiques, 2 écarts : #868 et bandeau tablette voulu)"
         }
       },
       "metriques": {}
