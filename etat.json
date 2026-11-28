@@ -11716,10 +11716,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T03:08:33.962Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T03:08:59.483Z",
+          "note": "Issue #864 : saisons du bassin, option de réglage et captures (S)"
         }
       },
       "metriques": {}
