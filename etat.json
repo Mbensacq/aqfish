@@ -11849,6 +11849,24 @@
         }
       },
       "metriques": {}
+    },
+    "327": {
+      "numero": 327,
+      "date": "2026-11-28",
+      "debut": "2026-11-28T14:25:14.777Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T14:25:14.777Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
