@@ -7,6 +7,7 @@ import { serializeWorld } from '../src/app/sim/save';
 import { populationOf } from '../src/app/sim/tank-capacity';
 import { capacityLimits, tankCapacity } from '../src/app/sim/tank-capacity-limits';
 import { createDefaultWorld } from '../src/app/sim/world';
+import { openScene, startEditing } from './outils-decor';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
@@ -123,5 +124,57 @@ test.describe('Capacité du bac (#809)', () => {
       'aria-disabled',
       'true',
     );
+  });
+});
+
+/**
+ * Scénario S3 jouable (#862, ADR 0190) : au bac d'eau froide, sans axolotl, un poisson rouge
+ * adulte dans environ 120 L ; le « + » du poisson rouge est refusé avec la raison OATA.
+ */
+
+/** Règle l'effectif de `species` par son champ numérique. */
+async function setCount(page: Page, species: string, value: number): Promise<void> {
+  await page.locator(`[data-species="${species}"] input[type="number"]`).fill(String(value));
+  await page.locator(`[data-species="${species}"] input[type="number"]`).press('Enter');
+  await expect.poll(() => count(page, species)).toBe(value);
+}
+
+test.describe('Capacité : poisson rouge en bac d’eau froide (#862)', () => {
+  // Rendu logiciel lent : le redimensionnement recrée la vue (comme `dimensions-bac.spec.ts`).
+  test.use({ viewport: { width: 800, height: 500 } });
+  test.setTimeout(300_000);
+
+  test('80 × 40 × 50 cm et un poisson rouge : le deuxième est refusé (OATA)', async ({ page }) => {
+    const errors = await openScene(page, '?environnement=eaufroide&seed=42&vitesse=0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'eaufroide');
+
+    await test.step('bac redimensionné à environ 120 L', async () => {
+      await startEditing(page);
+      for (const [key, cm] of [
+        ['width', 80],
+        ['depth', 40],
+        ['height', 50],
+      ] as const) {
+        await page.locator(`[data-dimension="${key}"]`).fill(String(cm));
+      }
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-tank', '0.8:0.5:0.4');
+      await page.getByRole('button', { name: 'Terminer' }).click();
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-editing', 'false');
+    });
+
+    await test.step('sans axolotl, un poisson rouge : « + » refusé, raison OATA', async () => {
+      await ouvrirReglages(page, 'Population');
+      await setCount(page, 'axolotl', 0);
+      await setCount(page, 'rouge', 1);
+      const plus = page.getByRole('button', { name: 'Ajouter un poisson rouge' });
+      await expect(plus).toHaveAttribute('aria-disabled', 'true');
+      await plus.dispatchEvent('click'); // aria-disabled : Playwright refuse click() (PIEGES)
+      await expect.poll(() => count(page, 'rouge')).toBe(1);
+      await expect(section(page).locator('[data-capacity-refusal="rouge"]')).toHaveText(
+        /^\s*1\d\d,\d L : un poisson rouge adulte demande 100 L, puis 50 L par poisson rouge en plus \(OATA\) ; il faudrait 150 L\s*$/,
+      );
+      await expect(section(page).locator('[data-capacity]')).toContainText('% de la capacité');
+    });
+    expect(errors).toEqual([]);
   });
 });

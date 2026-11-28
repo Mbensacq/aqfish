@@ -456,7 +456,9 @@ export const COLD_TANK: Environment = {
   rain: false,
   floatingLeaves: false,
   current: NO_CURRENT,
-  species: [AXOLOTL.id],
+  // Issue #862 (ADR 0190) : le poisson rouge y est proposé sans y être peuplé d'office ; la
+  // compatibilité refuse toujours de le mêler aux axolotls (`sim/compatibility.ts`).
+  species: [AXOLOTL.id, ROUGE.id],
   population: defaultPopulation([AXOLOTL]),
 };
 
@@ -545,8 +547,11 @@ export interface TankPlace {
 /** Environnement seul (dimensions d'origine) ou lieu aux dimensions réglées. */
 export type Place = EnvironmentId | TankPlace;
 
-/** Environnements dont les dimensions se règlent (le bac tropical seulement). */
-export const RESIZABLE_ENVIRONMENTS: readonly EnvironmentId[] = ['tropical'];
+/**
+ * Environnements dont les dimensions se règlent : le bac tropical, et le bac d'eau froide
+ * depuis l'issue #862 (ADR 0190, scénario S3 : un poisson rouge dans 120 L).
+ */
+export const RESIZABLE_ENVIRONMENTS: readonly EnvironmentId[] = ['tropical', 'eaufroide'];
 
 /** Vrai si les dimensions de l'environnement `id` se règlent. */
 export function isTankResizable(id: EnvironmentId): boolean {

@@ -30,8 +30,11 @@ import type { MutableWorld, World } from './world-types';
  * est tirée de la graine du monde.
  */
 
-/** Environnements dont le décor est modifiable (le bac tropical seulement, pour l'instant). */
-export const EDITABLE_ENVIRONMENTS: readonly EnvironmentId[] = ['tropical'];
+/**
+ * Environnements dont le décor est modifiable : le bac tropical, et le bac d'eau froide depuis
+ * l'issue #862 (ADR 0190), pour y régler les dimensions (curseurs de l'éditeur).
+ */
+export const EDITABLE_ENVIRONMENTS: readonly EnvironmentId[] = ['tropical', 'eaufroide'];
 
 /** Vrai si le décor de l'environnement `id` peut être édité. */
 export function isDecorEditable(id: EnvironmentId): boolean {
