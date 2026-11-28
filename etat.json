@@ -11828,6 +11828,12 @@
           "debut": "2026-11-28T10:13:30.250Z",
           "fin": "2026-11-28T10:13:49.842Z",
           "note": "Issue #877 : anniversaires au journal et doyen du bac (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T10:14:29.725Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
