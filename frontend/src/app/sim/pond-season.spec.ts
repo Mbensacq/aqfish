@@ -10,19 +10,26 @@ import {
   dashboardSeason,
   DAYS_PER_YEAR,
   dayOfYear,
+  hasPondSeasons,
+  isPondSeason,
   MAX_POND_TEMPERATURE,
   MIN_POND_TEMPERATURE,
   pondSeasonReadout,
   pondTemperature,
   pondTemperatureOnDay,
   pondTemperatureSlope,
+  SEASON_CAPTURE_DAYS,
   seasonOfDay,
+  setWorldSeasonInPlace,
+  setWorldSeasonsInPlace,
   START_DAY_OF_YEAR,
   trendOfDay,
   WARMEST_DAY_OF_YEAR,
 } from './pond-season';
+import { parseWorld, serializeWorld } from './save';
 import { SPECIES } from './species';
 import { ambientTemperature, readWater, targetTemperature, WATER_TEMPERATURES } from './water';
+import { waterSample } from './water-dashboard';
 import { waterQuality } from './water-quality';
 import { advance, createDefaultWorld } from './world';
 import type { MutableWorld, World } from './world-types';
@@ -259,5 +266,128 @@ describe('saisons du bassin : monde (issue #858)', () => {
     const bad = readWater({ ...water, ambient: 99 }, 'bassin');
     expect(bad.ok).toBe(false);
     expect(readWater({ ...water, ambient: 'chaud' }, 'bassin').ok).toBe(false);
+  });
+});
+
+describe('saisons du bassin : option de réglage (issue #864)', () => {
+  it('coupées : plus de température ambiante, l’eau revient vers 18 °C fixes', () => {
+    const winter = worldAt('bassin', timeOfDay(22), 4) as MutableWorld;
+    setWorldSeasonsInPlace(winter, false);
+    expect(winter.seasonsOff).toBe(true);
+    expect(winter.water.ambient).toBeUndefined();
+    expect(hasPondSeasons(winter)).toBe(false);
+    const after = advance(winter, 60 * 60 * 10);
+    expect(after.seasonsOff).toBe(true);
+    expect(after.water.ambient).toBeUndefined();
+    expect(targetTemperature(after.water, 'bassin')).toBe(WATER_TEMPERATURES.bassin);
+    expect(after.water.temperature).toBeGreaterThan(4);
+    expect(dashboardSeason(waterSample(after.water, 'bassin', after.tick))).toBeNull();
+  });
+
+  it('coupées : les koïs transis n’ont plus d’appétit réduit par la saison', () => {
+    const cold = worldAt('bassin', timeOfDay(22), 2) as MutableWorld;
+    const off = structuredClone(cold) as MutableWorld;
+    setWorldSeasonsInPlace(off, false);
+    const steps = 60 * 5;
+    expect(meanHunger(advance(off, steps), 'koi')).toBeGreaterThan(
+      meanHunger(advance(cold, steps), 'koi'),
+    );
+  });
+
+  it('rétablies : la température ambiante du jour revient tout de suite', () => {
+    const world = worldAt('bassin', timeOfDay(WARMEST_DAY_OF_YEAR)) as MutableWorld;
+    setWorldSeasonsInPlace(world, false);
+    setWorldSeasonsInPlace(world, true);
+    expect(world.seasonsOff).toBeUndefined();
+    expect(world.water.ambient).toBeCloseTo(MAX_POND_TEMPERATURE, 6);
+    expect(hasPondSeasons(world)).toBe(true);
+  });
+
+  it('hors du bassin : drapeau gardé, aucune température ambiante', () => {
+    const world = worldAt('tropical', 0) as MutableWorld;
+    setWorldSeasonsInPlace(world, false);
+    expect(world.seasonsOff).toBe(true);
+    setWorldSeasonsInPlace(world, true);
+    expect(world.seasonsOff).toBeUndefined();
+    expect(world.water.ambient).toBeUndefined();
+    expect(hasPondSeasons(world)).toBe(false);
+  });
+
+  it('la sauvegarde garde l’option coupée, ne l’écrit pas active, refuse une autre valeur', () => {
+    const world = advance(worldAt('bassin', 0), 2) as MutableWorld;
+    expect(JSON.parse(serializeWorld(world))['seasonsOff']).toBeUndefined();
+    setWorldSeasonsInPlace(world, false);
+    const text = serializeWorld(world);
+    const read = parseWorld(text);
+    expect(read.ok && read.world.seasonsOff).toBe(true);
+    expect(read.ok && read.world.water.ambient).toBeUndefined();
+    const reread = read.ok ? advance(read.world, 60) : null;
+    expect(reread?.water.ambient).toBeUndefined();
+    for (const bad of [false, 'oui', 1]) {
+      const data = { ...JSON.parse(text), seasonsOff: bad };
+      const refused = parseWorld(JSON.stringify(data));
+      expect(refused.ok).toBe(false);
+      expect(!refused.ok && refused.error).toContain('seasonsOff doit valoir true');
+    }
+  });
+});
+
+describe('saisons du bassin : paramètre de capture saison= (issue #864)', () => {
+  it('isPondSeason : les quatre saisons seulement', () => {
+    for (const season of ['printemps', 'ete', 'automne', 'hiver']) {
+      expect(isPondSeason(season)).toBe(true);
+    }
+    for (const value of ['été', 'Hiver', '', 'toString', null, 3]) {
+      expect(isPondSeason(value)).toBe(false);
+    }
+  });
+
+  it('dayOfYear part du jour donné', () => {
+    expect(dayOfYear(0, 22)).toBe(22);
+    expect(dayOfYear(2 * DAY, 364)).toBeCloseTo(1, 9);
+    expect(dayOfYear(Number.NaN, 40)).toBe(40);
+  });
+
+  it('chaque saison de capture tombe dans sa saison', () => {
+    for (const season of ['printemps', 'ete', 'automne', 'hiver'] as const) {
+      expect(seasonOfDay(SEASON_CAPTURE_DAYS[season])).toBe(season);
+    }
+  });
+
+  it('hiver : eau froide dès t = 0, saison gardée au fil des pas et au tableau de bord', () => {
+    const world = worldAt('bassin', 0) as MutableWorld;
+    setWorldSeasonInPlace(world, 'hiver');
+    expect(world.seasonStartDay).toBe(SEASON_CAPTURE_DAYS.hiver);
+    expect(world.water.temperature).toBeCloseTo(MIN_POND_TEMPERATURE, 1);
+    expect(world.water.ambient).toBe(world.water.temperature);
+    const after = advance(world, 60 * 30);
+    expect(after.seasonStartDay).toBe(SEASON_CAPTURE_DAYS.hiver);
+    expect(after.water.ambient).toBeLessThan(COLD_DORMANT_TEMPERATURE);
+    const sample = waterSample(after.water, 'bassin', after.tick, after.seasonStartDay);
+    expect(dashboardSeason(sample)?.season).toBe('hiver');
+    expect(dashboardSeason({ ...sample, seasonStartDay: undefined })?.season).toBe('printemps');
+  });
+
+  it('été : eau chaude au plus haut de la courbe', () => {
+    const world = worldAt('bassin', 0) as MutableWorld;
+    setWorldSeasonInPlace(world, 'ete');
+    expect(world.water.temperature).toBeCloseTo(MAX_POND_TEMPERATURE, 6);
+  });
+
+  it('sans effet hors du bassin ou saisons coupées', () => {
+    const tropical = worldAt('tropical', 0) as MutableWorld;
+    const before = structuredClone(tropical);
+    setWorldSeasonInPlace(tropical, 'hiver');
+    expect(tropical).toEqual(before);
+    const off = worldAt('bassin', 0) as MutableWorld;
+    setWorldSeasonsInPlace(off, false);
+    const offBefore = structuredClone(off);
+    setWorldSeasonInPlace(off, 'hiver');
+    expect(off).toEqual(offBefore);
+  });
+
+  it('waterSample ne reprend le jour de départ qu’avec une température ambiante', () => {
+    const water = worldAt('tropical', 0).water;
+    expect(waterSample(water, 'tropical', 0, 22).seasonStartDay).toBeUndefined();
   });
 });

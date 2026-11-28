@@ -309,7 +309,7 @@ export class AquariumHost {
    * Relevés du bac affiché (#69, #207, #260, #278, #460, #582, #696) : effectifs, eau, santé,
    * courant, mode, environnement et dimensions, `TankReadoutsController`.
    */
-  private readonly readouts = new TankReadoutsController({
+  readonly readouts = new TankReadoutsController({
     probe: this.probe,
     world: () => this.currentWorld,
     view: () => this.view,
@@ -383,8 +383,11 @@ export class AquariumHost {
    * de l'eau, journal et parcours guidé, `TankRecordsController`.
    */
   private readonly records = new TankRecordsController({ isCapture: () => this.capture });
-  /** Réglages de l'eau, du courant et de l'entretien (#207, #460, #476, #583, #696). */
-  private readonly settingsCtl = new WaterSettingsController({
+  /**
+   * Réglages de l'eau, du courant et de l'entretien (#207, #460, #476, #583, #696) ; public :
+   * le gabarit y règle les saisons du bassin (#864, `readouts.pondSeasons`).
+   */
+  readonly settingsCtl = new WaterSettingsController({
     world: () => this.currentWorld,
     isCapture: () => this.capture,
     records: this.records,

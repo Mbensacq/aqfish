@@ -167,13 +167,22 @@ export interface WaterSample {
    * facultative : absente, celle de l'environnement (`WATER_TEMPERATURES`).
    */
   readonly ambient?: number;
+  /**
+   * Jour de l'année au temps 0 du calendrier du bassin (`World.seasonStartDay`, capture
+   * `saison=`, issue #864) ; absent : `START_DAY_OF_YEAR`.
+   */
+  readonly seasonStartDay?: number;
 }
 
-/** Relevé exact de l'eau `water` d'un bac de l'environnement `environment` au pas `tick`. */
+/**
+ * Relevé exact de l'eau `water` d'un bac de l'environnement `environment` au pas `tick`
+ * (`seasonStartDay` : `World.seasonStartDay`, repris seulement avec une température ambiante).
+ */
 export function waterSample(
   water: WaterState,
   environment: EnvironmentId,
   tick: number,
+  seasonStartDay?: number,
 ): WaterSample {
   return {
     tick,
@@ -187,6 +196,7 @@ export function waterSample(
     ...(water.chlorine === undefined ? {} : { chlorine: water.chlorine }),
     ...(carbonAgainstMedication(water) ? { carbonAgainstMedication: true as const } : {}),
     ...(water.ambient === undefined ? {} : { ambient: water.ambient }),
+    ...(water.ambient === undefined || seasonStartDay === undefined ? {} : { seasonStartDay }),
   };
 }
 

@@ -118,11 +118,12 @@ const ANGULAR_SPEED = (2 * Math.PI) / DAYS_PER_YEAR;
 
 /**
  * Jour de l'année au temps `time` du monde (secondes), réel dans [0, `DAYS_PER_YEAR`[ (0 = 1er
- * janvier à minuit), à partir de `START_DAY_OF_YEAR`. Un temps non fini compte comme 0.
+ * janvier à minuit), à partir du jour `startDay` (`START_DAY_OF_YEAR` par défaut ; paramètre
+ * de capture `saison=`, #864). Un temps non fini compte comme 0.
  */
-export function dayOfYear(time: number): number {
+export function dayOfYear(time: number, startDay = START_DAY_OF_YEAR): number {
   const elapsed = Number.isFinite(time) ? time / DEFAULT_DAY_LENGTH_SECONDS : 0;
-  const day = (START_DAY_OF_YEAR + elapsed) % DAYS_PER_YEAR;
+  const day = (startDay + elapsed) % DAYS_PER_YEAR;
   return day < 0 ? day + DAYS_PER_YEAR : day;
 }
 
@@ -138,9 +139,9 @@ export function pondTemperatureOnDay(day: number): number {
   );
 }
 
-/** Température ambiante du bassin au temps `time` du monde, en °C. */
-export function pondTemperature(time: number): number {
-  return pondTemperatureOnDay(dayOfYear(time));
+/** Température ambiante du bassin au temps `time` du monde, en °C (`startDay` : `dayOfYear`). */
+export function pondTemperature(time: number, startDay?: number): number {
+  return pondTemperatureOnDay(dayOfYear(time, startDay));
 }
 
 /** Variation de la température ambiante au jour `day`, en °C par jour de jeu. */
@@ -183,9 +184,9 @@ export interface PondSeasonReadout {
   readonly text: string;
 }
 
-/** Relevé de la saison du bassin au temps `time` du monde. */
-export function pondSeasonReadout(time: number): PondSeasonReadout {
-  const day = dayOfYear(time);
+/** Relevé de la saison du bassin au temps `time` du monde (`startDay` : `dayOfYear`). */
+export function pondSeasonReadout(time: number, startDay?: number): PondSeasonReadout {
+  const day = dayOfYear(time, startDay);
   const season = seasonOfDay(day);
   const trend = trendOfDay(day);
   return {
@@ -210,16 +211,18 @@ export interface DashboardSeason {
 
 /**
  * Saison du relevé de l'eau au pas `tick` (`world.tick`), ou `null` sans température ambiante
- * saisonnière (`ambient` absent : bac intérieur). Pas non fini : `null`.
+ * saisonnière (`ambient` absent : bac intérieur, saisons coupées). Pas non fini : `null`.
+ * `seasonStartDay` : jour de l'année au temps 0 (`World.seasonStartDay`, capture `saison=`).
  */
 export function dashboardSeason(sample: {
   readonly tick: number;
   readonly ambient?: number;
+  readonly seasonStartDay?: number;
 }): DashboardSeason | null {
   if (sample.ambient === undefined || !Number.isFinite(sample.tick)) {
     return null;
   }
-  const { season, trend, text } = pondSeasonReadout(sample.tick * SIM_DT);
+  const { season, trend, text } = pondSeasonReadout(sample.tick * SIM_DT, sample.seasonStartDay);
   const word = SEASON_LABELS[season];
   return {
     season,
@@ -260,14 +263,15 @@ export function coldAppetite(species: string, temperature: number): number {
  * Saison du pas, **en modifiant** `world` (issue #858) : au bassin seulement, pose la
  * température ambiante du temps courant (`ambient`, que l'eau suit ensuite) et retire à la
  * faim des poissons transis la part que leur appétit réduit ne prend pas (`coldAppetite`) ; la
- * faim, déjà montée pendant la nage, ne descend jamais sous 0. Ailleurs, ne fait rien.
+ * faim, déjà montée pendant la nage, ne descend jamais sous 0. Ailleurs, ou saisons coupées
+ * (`World.seasonsOff`, #864), ne fait rien.
  */
 export function stepPondSeasonInPlace(world: MutableWorld, dt: number): void {
-  if (world.environment !== 'bassin') {
+  if (world.environment !== 'bassin' || world.seasonsOff === true) {
     return;
   }
   const water = world.water as MutableWaterState;
-  water.ambient = pondTemperature(world.time);
+  water.ambient = pondTemperature(world.time, world.seasonStartDay);
   const fishes = world.entities as Mutable<Entity>[];
   for (const fish of fishes) {
     const appetite = coldAppetite(fish.species, water.temperature);
@@ -276,4 +280,60 @@ export function stepPondSeasonInPlace(world: MutableWorld, dt: number): void {
       fish.hunger = Math.max(0, fish.hunger - skipped);
     }
   }
+}
+
+/** Vrai si `world` suit les saisons du bassin : le bassin, saisons non coupées (#864). */
+export function hasPondSeasons(world: Pick<MutableWorld, 'environment' | 'seasonsOff'>): boolean {
+  return world.environment === 'bassin' && world.seasonsOff !== true;
+}
+
+/**
+ * Active ou coupe les saisons du bassin (issue #864), **en modifiant** `world`. Coupées : la
+ * température ambiante saisonnière est retirée, l'eau revient vers les 18 °C fixes du bassin
+ * (`WATER_TEMPERATURES`) à son rythme habituel. Rétablies au bassin : la température ambiante
+ * du jour est posée tout de suite. Le drapeau est gardé hors du bassin (sans effet).
+ */
+export function setWorldSeasonsInPlace(world: MutableWorld, enabled: boolean): void {
+  const water = world.water as MutableWaterState;
+  if (!enabled) {
+    world.seasonsOff = true;
+    delete water.ambient;
+    return;
+  }
+  delete world.seasonsOff;
+  if (world.environment === 'bassin') {
+    water.ambient = pondTemperature(world.time, world.seasonStartDay);
+  }
+}
+
+/**
+ * Jour de l'année de chaque saison pour le paramètre de capture `saison=` (#864) : le cœur de
+ * la saison, au plus chaud pour l'été et au plus froid pour l'hiver.
+ */
+export const SEASON_CAPTURE_DAYS: Readonly<Record<PondSeason, number>> = {
+  printemps: 113,
+  ete: WARMEST_DAY_OF_YEAR,
+  automne: 297,
+  hiver: 22,
+};
+
+/** Vrai si `value` est une saison connue (`PondSeason`). */
+export function isPondSeason(value: unknown): value is PondSeason {
+  return typeof value === 'string' && Object.hasOwn(SEASON_CAPTURE_DAYS, value);
+}
+
+/**
+ * Place le calendrier du bassin au cœur de la saison `season` (paramètre de capture `saison=`,
+ * #864), **en modifiant** `world` : jour de l'année au temps 0 (`seasonStartDay`), puis
+ * température ambiante et température de l'eau de ce jour, pour que la capture montre la
+ * saison dès t = 0. Sans effet hors du bassin ou saisons coupées.
+ */
+export function setWorldSeasonInPlace(world: MutableWorld, season: PondSeason): void {
+  if (!hasPondSeasons(world)) {
+    return;
+  }
+  world.seasonStartDay = SEASON_CAPTURE_DAYS[season];
+  const water = world.water as MutableWaterState;
+  water.ambient = pondTemperature(world.time, world.seasonStartDay);
+  water.temperature = water.ambient;
 }

@@ -110,6 +110,12 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
         'contour',
       ]),
       setting(
+        'Saisons du bassin',
+        'environnement',
+        'Été chaud, hiver froid au bassin à koïs ; coupées, 18 °C toute l’année.',
+        ['saison', 'été', 'hiver', 'température', 'climat'],
+      ),
+      setting(
         'Afficher la pièce',
         'environnement',
         'La pièce autour du bac tropical, avec ses meubles.',

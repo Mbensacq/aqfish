@@ -258,6 +258,11 @@ export interface CaptureParams {
   readonly eggs: boolean;
   /** Force du courant de `courant=` (issue #460), non vérifiée ; `null` si absent. */
   readonly current: string | null;
+  /**
+   * Saison du bassin de `saison=` (`printemps`, `ete`, `automne`, `hiver`, issue #864), non
+   * vérifiée ici : l'application ignore une saison inconnue ; `null` si absente.
+   */
+  readonly season: string | null;
   /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
   readonly catappa: number;
   /** Heures du distributeur de `distributeur=` (issue #583) ; `null` si absent ou invalide. */
@@ -398,6 +403,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   fry: false,
   eggs: false,
   current: null,
+  season: null,
   catappa: 0,
   feeder: null,
   editSelection: null,
@@ -471,6 +477,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     fry: params.get('alevins') === '1',
     eggs: params.get('oeufs') === '1',
     current: params.get('courant'),
+    season: params.get('saison'),
     catappa: parseCatappa(params.get('catappa')),
     feeder: parseFeeder(params.get('distributeur')),
     editSelection: parseEditSelection(params.get('edition')),

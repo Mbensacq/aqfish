@@ -56,6 +56,25 @@ au stress des points blancs (`ichStress`) : une eau à 4 °C en hiver ne doit pa
 - Empreintes de non-régression : seules celles du bassin changent (température ambiante dans
   l'eau, eau à 18,06 au lieu de 18 °C) ; les nages restent celles d'avant (eau au-dessus de
   10 °C les premières semaines de jeu).
-- Restent à faire (tranche suivante de #858) : l'option « saisons » désactivable dans les
-  réglages, les captures du bassin en été et en hiver, la bande tolérée de la courbe de
-  température (`toleratedRange`, encore calée sur `WATER_TEMPERATURES`).
+- Tranche suivante (#864) : voir ci-dessous. La bande tolérée de la courbe de température
+  (`toleratedRange`) suit la température ambiante depuis #866.
+
+## Suite : option et captures (issue #864)
+
+1. **Option « Saisons »** : drapeau `World.seasonsOff` (absent : saisons actives ; jamais
+   écrit à `false`, comme `mortality`), sauvegardé avec le monde. Coupées
+   (`setWorldSeasonsInPlace`), la température ambiante est retirée de l'eau et
+   `stepPondSeasonInPlace` ne fait rien : l'eau revient vers les 18 °C du bassin à son rythme
+   habituel, sans appétit réduit par la saison (le repos dû au froid suit l'eau tant qu'elle
+   est froide). Rétablies, la température ambiante du jour est reposée tout de suite. Case
+   « Saisons » sur la ligne « Lieu » du bassin (catégorie « Bac et milieu »), à la place de
+   « Afficher la pièce » qui n'existe qu'au bac tropical.
+2. **Captures saisonnières** : paramètre `saison=` (`printemps`, `ete`, `automne`, `hiver`).
+   Il pose `World.seasonStartDay`, le jour de l'année au temps 0 (cœur de la saison : 205 au
+   plus chaud, 22 au plus froid), jamais enregistré, et met l'eau à la température du jour
+   dès t = 0. Le relevé de l'eau le reprend (`WaterSample.seasonStartDay`) pour que le
+   tableau de bord affiche la bonne saison. Écarté : avancer `world.time` de plusieurs mois,
+   qui aurait décalé l'âge des animaux, l'azote et toutes les horloges du monde.
+3. Accès du gabarit : `aquarium-host.ts` étant au plafond de son exception de taille,
+   l'application lit `readouts.pondSeasons` et appelle `settingsCtl.setSeasons` directement
+   (contrôleurs rendus publics) plutôt que par de nouvelles méthodes de l'hôte.
