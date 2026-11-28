@@ -11669,6 +11669,24 @@
         }
       },
       "metriques": {}
+    },
+    "322": {
+      "numero": 322,
+      "date": "2026-11-28",
+      "debut": "2026-11-28T01:00:29.967Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T01:00:29.967Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
