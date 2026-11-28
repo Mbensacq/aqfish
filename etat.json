@@ -11654,6 +11654,12 @@
           "debut": "2026-11-27T23:43:45.798Z",
           "fin": "2026-11-28T00:11:55.500Z",
           "note": "PR #879 : #875 (sameAgeDays en oracle de test) + ROADMAP v1.34/v1.35, CI verte ; aucune rétro ancienne à fermer ; e2e locaux partiels (185/568 verts), CI complète verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T00:12:35.332Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
