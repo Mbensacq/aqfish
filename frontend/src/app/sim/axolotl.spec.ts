@@ -67,7 +67,8 @@ describe('axolotl : espèce du paludarium (#130)', () => {
   it('deux par défaut dans le bac d’eau froide, seul ; toléré mais absent par défaut au paludarium (#271)', () => {
     // Depuis l'issue #271 (ADR 0065), l'axolotl vit seul dans le bac d'eau froide ; il reste
     // proposé au paludarium (anciennes sauvegardes), sans y être peuplé par défaut.
-    expect(COLD_TANK.species).toEqual(['axolotl']);
+    // Le poisson rouge y est proposé depuis #862, jamais avec l'axolotl (compatibilité).
+    expect(COLD_TANK.species).toEqual(['axolotl', 'rouge']);
     expect(COLD_TANK.population).toEqual([{ species: 'axolotl', count: 2 }]);
     expect(PALUDARIUM.species).toContain('axolotl');
     expect(PALUDARIUM.population.map((p) => p.species)).not.toContain('axolotl');

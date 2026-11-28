@@ -210,11 +210,15 @@ describe('poisson rouge (#654) : compatibilité', () => {
 });
 
 describe('poisson rouge (#654) : bassin et robes', () => {
-  it('proposé au catalogue du bassin seulement, absent de sa population de départ', () => {
+  it('proposé au bassin et au bac d’eau froide (#862), absent de leur population de départ', () => {
     expect(POND.species).toEqual(['koi', 'rouge']);
     expect(POND.population.map((p) => p.species)).toEqual(['koi']);
     for (const env of Object.values(ENVIRONMENTS)) {
-      expect(livesIn(env.id, 'rouge'), env.id).toBe(env.id === 'bassin');
+      expect(livesIn(env.id, 'rouge'), env.id).toBe(env.id === 'bassin' || env.id === 'eaufroide');
+      expect(
+        env.population.map((p) => p.species),
+        env.id,
+      ).not.toContain('rouge');
     }
     const entry = speciesCatalog('bassin').find((e) => e.species === 'rouge');
     expect(entry?.defaultCount).toBe(0);

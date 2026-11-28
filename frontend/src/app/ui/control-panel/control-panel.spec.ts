@@ -1423,7 +1423,9 @@ describe('ControlPanel', () => {
     fixture.componentInstance.editable.set(false);
     await fixture.whenStable();
     expect(button().getAttribute('aria-disabled')).toBe('true');
-    expect(button().getAttribute('aria-label')).toBe('Éditer le décor (bac tropical seulement)');
+    expect(button().getAttribute('aria-label')).toBe(
+      'Éditer le décor (bacs tropical et d’eau froide seulement)',
+    );
     button().click();
     expect(fixture.componentInstance.edits).toBe(1);
   });

@@ -225,7 +225,8 @@ describe('SpeciesWiki (#287)', () => {
     await openWiki();
     expect((root().querySelector('input[type="search"]') as HTMLInputElement).value).toBe('');
     expect(names('present')).toEqual(['axolotl']);
-    expect(names('addable')).toEqual([]);
+    // Le poisson rouge est proposé au bac d'eau froide depuis #862.
+    expect(names('addable')).toEqual(['rouge']);
   });
 });
 

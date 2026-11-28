@@ -237,7 +237,8 @@ test.describe('Environnement', () => {
       await selector(page).selectOption(id);
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', id);
     }
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'axolotl:2');
+    // Poisson rouge proposé depuis #862, absent de la population de départ.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'axolotl:2,rouge:0');
     await ouvrirReglages(page, 'Population');
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
     await expect(page.locator('[data-mix-warning]')).toHaveCount(0);
