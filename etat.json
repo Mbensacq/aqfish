@@ -11770,10 +11770,10 @@
           "note": "Verdict OK, 0 bug, captures c324 publiées (185/186 identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T07:11:52.867Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T07:42:36.789Z",
+          "note": "PR #884 fusionnée → v1.35.2 (release CI OK, CI main verte), #862 fermée ; dette #885"
         }
       },
       "metriques": {}
