@@ -11821,7 +11821,7 @@
       "type": "fonctionnalite",
       "issue": 877,
       "pr": 888,
-      "version": null,
+      "version": "v1.35.4",
       "phases": {
         "planif": {
           "statut": "termine",
