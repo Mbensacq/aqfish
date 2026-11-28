@@ -11660,6 +11660,12 @@
           "debut": "2026-11-28T00:12:35.332Z",
           "fin": "2026-11-28T00:29:39.752Z",
           "note": "Verdict OK, 0 bug, captures c321 publiées (189/189 identiques à c320)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T00:30:14.495Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
