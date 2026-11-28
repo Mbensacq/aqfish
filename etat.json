@@ -11885,6 +11885,24 @@
         }
       },
       "metriques": {}
+    },
+    "328": {
+      "numero": 328,
+      "date": "2026-11-28",
+      "debut": "2026-11-28T17:00:08.824Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T17:00:08.824Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
