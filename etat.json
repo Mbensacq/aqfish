@@ -11728,10 +11728,10 @@
           "note": "PR #882 : option et captures des saisons du bassin (#864), CI verte ; corrige la liste des lieux recouverte au bassin ; e2e saisons dans forme-bassin.spec (budget parts #600)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T04:12:08.826Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T04:40:51.953Z",
+          "note": "Verdict OK, 0 bug, captures c323 publiées (187/189 identiques ; été/hiver visuellement proches)"
         }
       },
       "metriques": {}
