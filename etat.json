@@ -11806,10 +11806,10 @@
           "note": "Verdict OK, 0 bug, captures c325 publiées (192/193 identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T08:50:52.467Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T10:12:54.215Z",
+          "note": "PR #886 fusionnée → v1.35.3 (release CI OK), #876 fermée ; CI main verte après relance d'e2e 5/7 bloquée (dette #887)"
         }
       },
       "metriques": {}
