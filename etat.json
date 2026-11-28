@@ -11792,6 +11792,12 @@
           "debut": "2026-11-28T07:43:11.569Z",
           "fin": "2026-11-28T07:43:30.772Z",
           "note": "Issue #876 : croissance des jeunes selon l'âge (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T07:44:08.509Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
