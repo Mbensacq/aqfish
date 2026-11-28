@@ -204,9 +204,6 @@ export class AquariumHost {
   private get dayClock(): DayClock {
     return this.clock.dayClock;
   }
-  private set dayClock(clock: DayClock) {
-    this.clock.dayClock = clock;
-  }
   /** Boucle d'images et pas fixe de la simulation (#696) : `RenderLoop`. */
   private readonly loop = new RenderLoop({
     window: () => this.document.defaultView,
@@ -420,12 +417,16 @@ export class AquariumHost {
   readonly scraping = this.tools.scraping;
   /** Vrai tant que le sécateur est en main (#477) : un clic sur une plante à tige la taille. */
   readonly pruning = this.tools.pruning;
-  /** Photo PNG et images de la séance (#479, #503, #624, #696) : `PhotoController`. */
-  private readonly photo = new PhotoController({
+  /**
+   * Photo PNG, images de la séance et de l'album (#479, #503, #624, #696, #860) :
+   * `PhotoController` ; l'album photo lui demande ses images (`albumShot`).
+   */
+  readonly photo = new PhotoController({
     document: this.document,
     view: () => this.view,
     isCapture: () => this.capture,
     isStopped: () => this.stopped,
+    worldTime: () => this.currentWorld?.time ?? null,
   });
   /** Message bref de la photo (#503), affiché au-dessus de la barre des vues. */
   readonly photoNotice = this.photo.notice;
@@ -780,7 +781,7 @@ export class AquariumHost {
     forbidSound: () => this.ambientSound.forbid(),
     dayClock: () => this.dayClock,
     setDayClock: (clock) => {
-      this.dayClock = clock;
+      this.clock.dayClock = clock;
     },
     setWorld: (world) => {
       this.currentWorld = world;

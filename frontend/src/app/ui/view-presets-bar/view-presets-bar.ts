@@ -124,6 +124,8 @@ export function presetForKey(key: string): CameraPreset | null {
  * touche) : demandent de prendre ou de poser l'outil ; l'état affiché vient de l'hôte.
  * Bouton « Photo » (issue #479, sans touche) : demande à l'hôte de télécharger une image PNG
  * du bac dans la vue courante ; un échec est dit au-dessus de la barre (`photoNotice`, #503).
+ * Bouton « Album » (issue #860, sans touche) : demande d'ouvrir ou de fermer l'album photo ;
+ * l'état affiché (`albumOpen`) vient de l'application.
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -227,6 +229,18 @@ export function presetForKey(key: string): CameraPreset | null {
       <app-pixel-icon class="view-presets-bar__icon" [pixels]="icons.photo" />
       Photo
     </button>
+    <button
+      type="button"
+      class="view-presets-bar__button"
+      [class.view-presets-bar__button--active]="albumOpen()"
+      [attr.aria-expanded]="albumOpen()"
+      aria-haspopup="dialog"
+      aria-label="Album photo du bac"
+      data-album-toggle
+      (click)="albumToggled.emit()"
+    >
+      Album
+    </button>
     <!-- Message bref de la photo (#503) : région toujours présente, annoncée quand elle change. -->
     <p
       class="view-presets-bar__notice"
@@ -309,6 +323,12 @@ export class ViewPresetsBar {
 
   /** Demande de photo du bac (bouton « Photo », issue #479). */
   readonly photoRequested = output<void>();
+
+  /** Bouton « Album » (#860) : ouvrir ou fermer l'album photo du bac. */
+  readonly albumToggled = output<void>();
+
+  /** Album photo ouvert (fourni par l'application, #860). */
+  readonly albumOpen = input(false);
 
   /** Message bref de la photo (échec, #503), fourni par l'hôte ; `null` : rien à dire. */
   readonly photoNotice = input<string | null>(null);

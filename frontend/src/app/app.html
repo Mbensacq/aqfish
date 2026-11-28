@@ -27,6 +27,8 @@
       (prunerToggled)="onToolToggled(); aquarium.togglePruner()"
       (photoRequested)="aquarium.takePhoto()"
       [photoNotice]="aquarium.photoNotice()"
+      [albumOpen]="album.open()"
+      (albumToggled)="album.toggle()"
       (rainToggled)="aquarium.toggleRain()"
       [freeCameraAvailable]="aquarium.roomEditable()"
       [freeCamera]="aquarium.freeCamera()"
@@ -181,6 +183,14 @@
       (completed)="aquarium.completeCareSessionStep()"
       (skipped)="aquarium.skipCareSessionStep()"
       (closed)="aquarium.closeCareSession()"
+    />
+    <!-- Album photo du bac (#860) : fenêtre modale, exclusive avec les autres panneaux. -->
+    <app-photo-album
+      #album
+      [environment]="aquarium.environment()"
+      [hour]="aquarium.clockHour()"
+      (opened)="onAlbumOpened()"
+      (shotRequested)="album.add(aquarium.photo.albumShot())"
     />
     <!-- Lien partagé (#426) : proposition d'import (rien n'est remplacé sans confirmation) ou refus. -->
     <app-share-offer

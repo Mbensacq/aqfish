@@ -9,6 +9,7 @@ describe('PhotoController (#696)', () => {
   let source: PhotoSource | null;
   let capture: boolean;
   let stopped: boolean;
+  let worldTime: number | null;
   let photo: PhotoController;
 
   const pixels = (width: number, height: number): PhotoPixels => ({
@@ -21,11 +22,13 @@ describe('PhotoController (#696)', () => {
     source = { takePhoto: () => pixels(4, 2) };
     capture = false;
     stopped = false;
+    worldTime = 3600;
     photo = new PhotoController({
       document,
       view: () => source,
       isCapture: () => capture,
       isStopped: () => stopped,
+      worldTime: () => worldTime,
     });
   });
 
@@ -80,5 +83,55 @@ describe('PhotoController (#696)', () => {
     stopped = true;
     photo.failed();
     expect(photo.notice()).toBeNull();
+  });
+
+  describe('albumShot (#860)', () => {
+    /** Canvas 2D factice : jsdom n'en a pas ; l'encodage rend une URL PNG connue. */
+    const fakeCanvas2d = (): void => {
+      const context = {
+        createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+        putImageData: () => undefined,
+      };
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+        context as unknown as CanvasRenderingContext2D, // double minimal de jsdom
+      );
+      vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+        'data:image/png;base64,AAAA',
+      );
+    };
+
+    it('image PNG de la scène et temps simulé du monde', () => {
+      fakeCanvas2d();
+      expect(photo.albumShot()).toEqual({ dataUrl: 'data:image/png;base64,AAAA', time: 3600 });
+      expect(photo.notice()).toBeNull();
+    });
+
+    it('sans vue, sans monde ou en capture : null, aucun message', () => {
+      fakeCanvas2d();
+      source = null;
+      expect(photo.albumShot()).toBeNull();
+      source = { takePhoto: () => pixels(4, 2) };
+      worldTime = null;
+      expect(photo.albumShot()).toBeNull();
+      worldTime = 0;
+      capture = true;
+      expect(photo.albumShot()).toBeNull();
+      expect(photo.notice()).toBeNull();
+    });
+
+    it('relecture qui lève ou encodage impossible : null et message bref', () => {
+      source = {
+        takePhoto: () => {
+          throw new Error('perdu');
+        },
+      };
+      expect(photo.albumShot()).toBeNull();
+      expect(photo.notice()).toBe(PHOTO_FAILED_MESSAGE);
+      photo.setNotice(null);
+      source = { takePhoto: () => pixels(4, 2) };
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+      expect(photo.albumShot()).toBeNull();
+      expect(photo.notice()).toBe(PHOTO_FAILED_MESSAGE);
+    });
   });
 });

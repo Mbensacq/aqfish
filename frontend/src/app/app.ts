@@ -25,6 +25,7 @@ import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS, firstTankPathVisible } from './ui/exclusive-panels/exclusive-panels';
 import { FirstTankPath } from './ui/first-tank-path/first-tank-path';
 import { Pharmacy } from './ui/pharmacy/pharmacy';
+import { PhotoAlbum } from './ui/photo-album/photo-album';
 import { ShareOffer } from './ui/share-offer/share-offer';
 import { CareSessionPanel } from './ui/care-session/care-session';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
@@ -68,6 +69,7 @@ import type { GuidePage } from './sim/care-guide';
     DecorEditor,
     FirstTankPath,
     Pharmacy,
+    PhotoAlbum,
     ShareOffer,
     CareSessionPanel,
     SpeciesWiki,
@@ -113,6 +115,7 @@ export class App {
   private readonly aquarium = viewChild<AquariumHost>('aquarium');
   private readonly wiki = viewChild<SpeciesWiki>('wiki');
   private readonly pharmacy = viewChild<Pharmacy>('pharmacy');
+  private readonly album = viewChild<PhotoAlbum>('album');
   /** « Masquer l'interface » (#725) : interrupteur dans « Affichage », touche `I`. */
   protected readonly hiddenInterface = inject(HiddenInterfaceState);
 
@@ -154,6 +157,7 @@ export class App {
    * de décor (#136, #167).
    */
   protected onHelpOpened(): void {
+    this.album()?.close();
     this.wiki()?.close();
     this.pharmacy()?.close();
     this.panel()?.close();
@@ -169,6 +173,7 @@ export class App {
    * exclusive avec les autres panneaux).
    */
   protected onPanelOpened(): void {
+    this.album()?.close();
     this.wiki()?.close();
     this.pharmacy()?.close();
     this.aquarium()?.setDecorEditing(false);
@@ -200,6 +205,7 @@ export class App {
    * écran étroit, celle de « Commandes ».
    */
   protected onEditRequested(): void {
+    this.album()?.close();
     this.wiki()?.close();
     this.pharmacy()?.close();
     this.panel()?.close();
@@ -214,6 +220,7 @@ export class App {
    * repli) et quitte l'éditeur de décor, à toute largeur.
    */
   protected onWikiOpened(): void {
+    this.album()?.close();
     this.pharmacy()?.close();
     this.panel()?.close();
     this.help()?.fold();
@@ -233,7 +240,20 @@ export class App {
    * dont elle occupe la place.
    */
   protected onPharmacyOpened(): void {
+    this.album()?.close();
     this.wiki()?.close();
+    this.panel()?.close();
+    this.help()?.fold();
+    this.aquarium()?.setDecorEditing(false);
+  }
+
+  /**
+   * Album photo ouvert (#860) : fenêtre modale, exclusive avec tous les autres panneaux, comme
+   * la pharmacie.
+   */
+  protected onAlbumOpened(): void {
+    this.wiki()?.close();
+    this.pharmacy()?.close();
     this.panel()?.close();
     this.help()?.fold();
     this.aquarium()?.setDecorEditing(false);

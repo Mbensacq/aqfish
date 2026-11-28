@@ -1,0 +1,180 @@
+// Album photo du bac (#860) : fenêtre au centre, page assombrie derrière (voile de la charte),
+// comme la fenêtre des réglages. Les photos gardent leurs pixels nets (aucun lissage).
+// Couleurs, rayons et polices de la charte (`ui/_panel-layout.scss`) seulement.
+@use '../panel-layout' as layout;
+
+:host {
+  color: layout.$panel-ink;
+  font: 400 13px / 1.4 layout.$font-text;
+}
+
+.photo-album__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: layout.$scrim;
+}
+
+.photo-album {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 10;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: layout.$space-2;
+  width: min(760px, calc(100vw - 2 * #{layout.$space-2}));
+  max-height: calc(100vh - 2 * #{layout.$space-2});
+  padding: layout.$space-3 layout.$space-4 layout.$space-4;
+  border: 1px solid layout.$panel-rule;
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
+  overflow-y: auto;
+  transform: translate(-50%, -50%);
+}
+
+.photo-album__header {
+  display: flex;
+  align-items: center;
+  gap: layout.$space-2;
+}
+
+.photo-album__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.photo-album__count {
+  margin-right: auto;
+  color: layout.$panel-ink-muted;
+  font-family: layout.$font-mono;
+}
+
+.photo-album__intro,
+.photo-album__empty,
+.photo-album__notice {
+  margin: 0;
+  color: layout.$panel-ink-muted;
+}
+
+.photo-album__notice:empty {
+  display: none;
+}
+
+.photo-album__notice {
+  color: layout.$state-watch;
+}
+
+.photo-album__button {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid layout.$panel-border;
+  border-radius: layout.$radius-control;
+  background: layout.$panel-background;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--primary {
+    border-color: layout.$brass;
+    background: layout.$brass;
+    color: layout.$on-brass;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: layout.$opacity-disabled;
+  }
+}
+
+.photo-album__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: layout.$space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photo-album__item {
+  display: flex;
+  flex-direction: column;
+  gap: layout.$space-1;
+  padding-bottom: layout.$space-2;
+  border-bottom: 1px solid layout.$panel-rule;
+}
+
+.photo-album__thumb {
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid layout.$panel-border;
+  border-radius: layout.$radius-control;
+  background: layout.$room;
+  cursor: zoom-in;
+}
+
+.photo-album__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+// Miniature : même cadre pour toutes les photos (prises en paysage ou en portrait), centrée.
+.photo-album__thumb .photo-album__image {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.photo-album__caption {
+  color: layout.$panel-ink-muted;
+  font-size: 13px;
+}
+
+.photo-album__link {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: layout.$panel-ink;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.photo-album__enlarged {
+  margin: 0;
+
+  .photo-album__image {
+    max-height: calc(100vh - 180px);
+    object-fit: contain;
+    border-radius: layout.$radius-control;
+    background: layout.$room;
+  }
+
+  .photo-album__caption {
+    display: block;
+    margin-top: layout.$space-1;
+  }
+}
+
+// Téléphone : deux miniatures par ligne, marges resserrées.
+@media (max-width: 480px) {
+  .photo-album {
+    padding: layout.$space-2 layout.$space-3 layout.$space-3;
+  }
+
+  .photo-album__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: layout.$space-2;
+  }
+}
