@@ -32,6 +32,9 @@
 .dashboard {
   position: relative;
   display: flex;
+  // #881 : quand la place manque (1100 à ~1260 px sur bureau, sous ~800 px en tablette), la
+  // simulation passe sous les jauges au lieu de les recouvrir.
+  flex-wrap: wrap;
   align-items: stretch;
   gap: 8px;
   padding: 5px 8px;
@@ -110,7 +113,12 @@
 
 .dashboard__gauges {
   display: grid;
-  flex: 1 1 auto;
+  // Base : la largeur minimale des cinq jauges (5 × 84 px et 4 écarts de 10 px), moins
+  // l'écart de 8 px qui les sépare de la simulation. Le retour à la ligne de la simulation
+  // (#881) se décide sur elle, et non sur la largeur du contenu : il n'a lieu que si la
+  // grille, débordant de plus de cet écart, passerait sous l'heure (tablette à 768 px
+  // inchangée, aide-mémoire posé à 129 px).
+  flex: 1 1 calc(5 * 84px + 4 * 10px - 8px);
   grid-template-columns: repeat(5, minmax(84px, 1fr));
   gap: 10px;
   min-width: 0;
@@ -220,7 +228,8 @@
   flex: none;
   align-items: center;
   gap: 5px;
-  margin: 0;
+  // Seule sur sa ligne (#881), calée à droite, sous le pH ; sinon, sans effet.
+  margin: 0 0 0 auto;
   padding-left: 8px;
   border-left: 1px solid layout.$panel-rule;
   white-space: nowrap;
@@ -270,6 +279,7 @@
   .dashboard__sim {
     grid-area: sim;
     justify-content: flex-end;
+    margin-left: 0;
     border-left: 0;
   }
 

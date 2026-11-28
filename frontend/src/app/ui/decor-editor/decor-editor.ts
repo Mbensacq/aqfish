@@ -19,7 +19,9 @@ import {
 } from '../../sim/decor-edit';
 import { MAX_ROOM_ITEMS, ROOM_ITEM_KINDS, type RoomItemKind } from '../../sim/room';
 import { ROOM_CATALOG } from '../../sim/room-furniture';
-import { clampTankDimensions, TANK_LIMITS, type TankDimensions } from '../../sim/tank';
+import { DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../../sim/environment';
+import { TANK_LIMITS, type TankDimensions } from '../../sim/tank';
+import { clampTankDimensionsIn, tankLimits } from '../../sim/tank-limits';
 
 /** Identifiant du panneau de l'éditeur de décor. */
 export const DECOR_EDITOR_ID = 'editeur-decor';
@@ -229,11 +231,11 @@ function decorPoseHint(choice: DecorChoiceId): string {
             Longueur
             <output class="decor-editor__value">{{ centimeters(dims.width) }} cm</output>
           </span>
-          <!-- Bornes statiques (TANK_LIMITS, vérifiées par le test) : posées avant la valeur. -->
+          <!-- Bornes de l'environnement (#885), liées avant la valeur ; max et pas statiques. -->
           <input
             class="decor-editor__range"
             type="range"
-            min="60"
+            [min]="minimums().width"
             max="200"
             step="10"
             aria-label="Longueur du bac, en centimètres"
@@ -248,11 +250,11 @@ function decorPoseHint(choice: DecorChoiceId): string {
             Largeur
             <output class="decor-editor__value">{{ centimeters(dims.depth) }} cm</output>
           </span>
-          <!-- Bornes statiques (TANK_LIMITS, vérifiées par le test) : posées avant la valeur. -->
+          <!-- Bornes de l'environnement (#885), liées avant la valeur ; max et pas statiques. -->
           <input
             class="decor-editor__range"
             type="range"
-            min="30"
+            [min]="minimums().depth"
             max="90"
             step="5"
             aria-label="Largeur du bac, en centimètres"
@@ -267,11 +269,11 @@ function decorPoseHint(choice: DecorChoiceId): string {
             Hauteur
             <output class="decor-editor__value">{{ centimeters(dims.height) }} cm</output>
           </span>
-          <!-- Bornes statiques (TANK_LIMITS, vérifiées par le test) : posées avant la valeur. -->
+          <!-- Bornes de l'environnement (#885), liées avant la valeur ; max et pas statiques. -->
           <input
             class="decor-editor__range"
             type="range"
-            min="50"
+            [min]="minimums().height"
             max="90"
             step="5"
             aria-label="Hauteur du bac, en centimètres"
@@ -309,6 +311,8 @@ export class DecorEditor {
    * curseurs sont alors masqués.
    */
   readonly dimensions = input<TankDimensions | null>(null);
+  /** Environnement du bac (fourni par l'hôte) : bornes des curseurs (`tankLimits`, #885). */
+  readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
 
   /** Outil choisi. */
   readonly toolChanged = output<EditorTool>();
@@ -326,6 +330,18 @@ export class DecorEditor {
   readonly dimensionsChanged = output<TankDimensions>();
 
   protected readonly panelId = DECOR_EDITOR_ID;
+  /**
+   * Minimum de chaque curseur, en centimètres : celui de l'environnement (`tankLimits`), pour
+   * que le bac d'eau froide (45 cm de haut) s'affiche à sa vraie hauteur (#885).
+   */
+  protected readonly minimums = computed(() => {
+    const limits = tankLimits(this.environment());
+    return {
+      width: Math.round(limits.width.min * 100),
+      depth: Math.round(limits.depth.min * 100),
+      height: Math.round(limits.height.min * 100),
+    };
+  });
   protected readonly tools = computed(() =>
     this.roomTools() ? [...DECOR_TOOLS, ...ROOM_TOOLS] : DECOR_TOOLS,
   );
@@ -365,7 +381,9 @@ export class DecorEditor {
     if (dims === null || !Number.isFinite(value)) {
       return;
     }
-    this.dimensionsChanged.emit(clampTankDimensions({ ...dims, [key]: value }));
+    this.dimensionsChanged.emit(
+      clampTankDimensionsIn(this.environment(), { ...dims, [key]: value }),
+    );
   }
 
   /** Bouton « Supprimer » : sans effet sans sélection. */

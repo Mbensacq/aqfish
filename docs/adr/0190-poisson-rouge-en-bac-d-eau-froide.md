@@ -41,6 +41,12 @@ qu'au bassin (environ 834 L, dimensions fixes), le bac d'eau froide (environ 155
 - Hauteur minimale réglable : 50 cm (`TANK_LIMITS`). Le bac d'eau froide par défaut (45 cm) est
   hors de ces bornes : le premier réglage de n'importe quel curseur porte sa hauteur à 50 cm.
   Sans réglage, rien ne change (dimensions absentes du monde et de la sauvegarde).
+  **Mise à jour (cycle 327, #885)** : les bornes dépendent de l'environnement
+  (`sim/tank-limits.ts`, `tankLimits`) : le minimum de `TANK_LIMITS` descend, par pas entiers,
+  jusqu'aux dimensions d'origine d'un environnement plus petit. Le bac d'eau froide se règle donc
+  de 45 à 90 cm de haut ; son curseur affiche 45 cm, et régler la longueur ne change plus la
+  hauteur. Le bac tropical garde exactement `TANK_LIMITS`. Simulation, éditeur, sauvegarde et
+  pièce bornent tous par `clampTankDimensionsIn` ; empreintes de non-régression inchangées.
 - Empreintes de non-régression inchangées ; sauvegardes anciennes du bac d'eau froide
   (sans dimensions) relues à l'identique (`sim/eau-froide-rouge.spec.ts`).
 - L'éditeur propose au bac d'eau froide la même palette qu'au tropical (rochers, bois, plantes,

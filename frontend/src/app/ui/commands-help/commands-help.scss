@@ -1,6 +1,7 @@
 // Aide-mémoire des commandes (docs/DA.md, « Interface ») : panneau plein aux
 // coins arrondis, en haut à droite, loin de la barre des préréglages (en bas au centre).
 @use '../panel-layout' as layout;
+@use '../dashboard-frame/dashboard-surface' as dashboard;
 
 :host {
   position: fixed;
@@ -131,13 +132,24 @@
 // y occupe toute la largeur, à 64 px du bas : l'aide-mémoire s'arrête 8 px au-dessus (#610).
 // Sa hauteur (34 à 90 px selon la largeur et la police) est publiée par le bandeau
 // (`--aqfish-status-height`, dashboard-status.ts) ; sans elle, l'ancienne marge (12 px).
+// Quand le cadre haut passe sur deux lignes (simulation sous les jauges, #881), l'aide-mémoire
+// descend d'autant : bas du cadre publié (`--aqfish-frame-height`) plus 7 px, arrondi au pixel
+// inférieur, jamais au-dessus de 129 px (cadre sur une ligne ou replié : place inchangée).
+$tablet-top: max(
+  129px,
+  round(down, calc(#{dashboard.$top-slot-narrow} + var(--aqfish-frame-height, 66px) + 7px), 1px)
+);
+
 @media (min-width: 640px) and (max-width: 1099px) {
   :host {
-    top: 129px;
+    top: $tablet-top;
   }
 
   .commands-help {
-    max-height: max(120px, calc(100vh - 129px - 64px - var(--aqfish-status-height, 4px) - 8px));
+    max-height: max(
+      120px,
+      calc(100vh - #{$tablet-top} - 64px - var(--aqfish-status-height, 4px) - 8px)
+    );
   }
 }
 

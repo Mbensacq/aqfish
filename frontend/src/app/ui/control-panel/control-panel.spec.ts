@@ -31,6 +31,7 @@ import type { TankListEntry } from '../../sim/tank-list';
 import { EMPTY_QUARANTINE, type QuarantineView } from '../../sim/quarantine';
 import type { CareMode } from '../../sim/care-mode';
 import { POND_SHAPES, type PondShape } from '../../sim/pond-shape';
+import { DECOR_EDIT_DISABLED_LABEL } from './decor-section';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
@@ -1427,6 +1428,9 @@ describe('ControlPanel', () => {
     expect(button().getAttribute('aria-label')).toBe(
       'Éditer le décor (bacs tropical et d’eau froide seulement)',
     );
+    // Infobulle et libellé : une seule constante (#885), jamais deux textes divergents.
+    expect(button().getAttribute('title')).toBe(button().getAttribute('aria-label'));
+    expect(button().getAttribute('title')).toBe(DECOR_EDIT_DISABLED_LABEL);
     button().click();
     expect(fixture.componentInstance.edits).toBe(1);
   });

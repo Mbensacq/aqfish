@@ -6,7 +6,8 @@ import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
 import { setPondShapeInPlace } from '../../sim/pond-reshape';
 import { ROOM_ANIMAL_CAP, roomAnimalCount } from '../../sim/room-limits';
 import { tankResizeRefusal } from '../../sim/room-state';
-import { clampTankDimensions, sameDimensions, type TankDimensions } from '../../sim/tank';
+import { sameDimensions, type TankDimensions } from '../../sim/tank';
+import { clampTankDimensionsIn } from '../../sim/tank-limits';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import type { MutableWorld } from '../../sim/world-types';
 import type { AquariumProbe } from './aquarium-probe';
@@ -129,7 +130,8 @@ export class TankPlaceController {
     // Un bac agrandi ne doit chevaucher ni meuble ni bac posé de la pièce (#311) : sinon la
     // sauvegarde refuserait la pièce entière.
     const room = ports.tanks.sync(world);
-    const refusal = tankResizeRefusal(room, ports.tanks.selectedTankId, clampTankDimensions(dims));
+    const bounded = clampTankDimensionsIn(world.environment, dims);
+    const refusal = tankResizeRefusal(room, ports.tanks.selectedTankId, bounded);
     if (refusal !== null) {
       return ports.refuse(refusal);
     }
