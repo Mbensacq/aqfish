@@ -11705,6 +11705,24 @@
         }
       },
       "metriques": {}
+    },
+    "323": {
+      "numero": 323,
+      "date": "2026-11-28",
+      "debut": "2026-11-28T03:08:33.962Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T03:08:33.962Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
