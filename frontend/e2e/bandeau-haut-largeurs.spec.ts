@@ -4,13 +4,14 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * Bandeau du haut entre 768 et 1439 px (#881) : à 1100 × 720, aide-mémoire déplié, l'heure et
  * la vitesse recouvraient la valeur et la jauge du pH. La simulation passe désormais sous les
  * jauges quand la place manque : les boîtes du pH et de la simulation ne se chevauchent à
- * aucune largeur, aide-mémoire déplié ou replié, et la simulation reste dans le cadre.
+ * aucune largeur, aide-mémoire déplié ou replié, et la simulation reste dans le cadre. Sur
+ * tablette (640 à 1099 px), l'aide-mémoire déplié descend sous le cadre passé sur deux lignes.
  *
  * Un seul test (la page est rechargée une fois) : la scène est à l'arrêt (`vitesse=0`) et la
  * largeur change par `setViewportSize`.
  */
 
-const WIDTHS = [768, 900, 1024, 1100, 1180, 1280, 1366, 1439] as const;
+const WIDTHS = [640, 700, 768, 900, 1024, 1100, 1180, 1280, 1366, 1439] as const;
 
 interface Rect {
   readonly left: number;
@@ -57,6 +58,12 @@ async function checkWidth(page: Page, width: number, helpOpen: boolean): Promise
     expect(box.left, `simulation hors du cadre (${where})`).toBeGreaterThanOrEqual(frameBox.left);
     expect(box.right, `simulation hors du cadre (${where})`).toBeLessThanOrEqual(frameBox.right);
     expect(overlaps(phBox, box), `pH sous la simulation (${where})`).toBe(false);
+  }
+  if (helpOpen && width < 1100) {
+    const help = await rect(page.locator('app-commands-help'));
+    expect(help.top, `aide-mémoire sur le cadre (${where})`).toBeGreaterThanOrEqual(
+      frameBox.bottom,
+    );
   }
 }
 

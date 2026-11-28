@@ -113,9 +113,12 @@
 
 .dashboard__gauges {
   display: grid;
-  // Base : la largeur minimale des cinq jauges (5 × 84 px et 4 écarts de 10 px). Le retour à
-  // la ligne de la simulation (#881) se décide sur elle, et non sur la largeur du contenu.
-  flex: 1 1 calc(5 * 84px + 4 * 10px);
+  // Base : la largeur minimale des cinq jauges (5 × 84 px et 4 écarts de 10 px), moins
+  // l'écart de 8 px qui les sépare de la simulation. Le retour à la ligne de la simulation
+  // (#881) se décide sur elle, et non sur la largeur du contenu : il n'a lieu que si la
+  // grille, débordant de plus de cet écart, passerait sous l'heure (tablette à 768 px
+  // inchangée, aide-mémoire posé à 129 px).
+  flex: 1 1 calc(5 * 84px + 4 * 10px - 8px);
   grid-template-columns: repeat(5, minmax(84px, 1fr));
   gap: 10px;
   min-width: 0;
