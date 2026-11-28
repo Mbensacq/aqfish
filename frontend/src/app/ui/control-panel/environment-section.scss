@@ -21,6 +21,13 @@
     grid-row: 2;
   }
 
+  // Forme du bassin (#190) : sous la liste des lieux, qu'elle recouvrait sur la même ligne
+  // (#864) ; la case « Saisons » prend la place de « Afficher la pièce ».
+  .control-panel__select[data-pond-shape] {
+    grid-row: 3;
+    margin-top: 6px;
+  }
+
   .control-panel__check--inline {
     grid-column: 2;
     grid-row: 1;

@@ -40,8 +40,7 @@ haut de sa section.
   séries de QA (machine chargée) sortaient des écarts isolés, absents à la relance. Trois
   causes, trois corrections dans les tests : (1) `front-tableau-de-bord-chlore` cliquait
   « Face » hors mode capture, ce qui lance une **transition de caméra en temps réel**, puis
-  photographiait aussitôt (cadrage du bac décalé de 2 000 à 8 000 pixels aux cycles 277 et
-  287) : relever `data-aqfish-camera` de la vue chargée et attendre d'y être revenu ;
+  photographiait aussitôt (cadrage du bac décalé de 2 000 à 8 000 pixels aux cycles 277 et 287) : relever `data-aqfish-camera` de la vue chargée et attendre d'y être revenu ;
   (2) après un clic qui ouvre ou fait défiler un panneau (`telephone-fiche-espece`,
   `telephone-catalogue`, `*-guide`), la souris reste sur le bouton et Chromium ne recalcule
   le survol qu'au **prochain mouvement simulé**, à un moment qui varie (écart de ±1 sur les
@@ -2198,3 +2197,14 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   `.view-presets-bar` contre `[data-pharmacy-toggle]` et les bords à 640, 768, 1100, 1280 et
   1440 px, en police par défaut et en DejaVu Sans, avant d'ajouter un bouton ; le mode compact
   (sans touches ni icônes) vaut désormais jusqu'à 1439 px. (2026-11-28)
+- **Interface masquée en capture : le tableau de bord ne se lit pas en `capture=1`** (cycle 323,
+  #864) : `app.html` n'affiche l'interface (tableau de bord, saison, jauges) que hors capture et
+  hors fond d'écran. Un e2e d'un paramètre de capture lit l'état sur les attributs de l'hôte
+  (`data-aqfish-water` : « qualité;température;consigne;… »). Hors capture, un bassin neuf à
+  `vitesse=0` n'a pas encore de température ambiante (posée au premier pas) : pas de saison au
+  tableau de bord tant que le monde n'a pas avancé. (2026-11-28)
+- **Grille de la ligne « Lieu » : deux listes sur la même cellule** (cycle 323, #864) : la
+  règle `.control-panel__select { grid-row: 2 }` de `environment-section.scss` plaçait la forme
+  du bassin exactement sur la liste des lieux, qu'elle recouvrait (impossible de quitter le
+  bassin à la souris ; les e2e passaient par le rôle, sans le voir). Regarder la catégorie
+  « Bac et milieu » au bassin après tout ajout sur cette ligne. (2026-11-28)
