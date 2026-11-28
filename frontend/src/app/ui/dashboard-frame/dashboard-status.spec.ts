@@ -74,6 +74,7 @@ const STARVED: HealthSummary = healthSummary(
     [reviewOf]="reviewOf()"
     [journal]="journal()"
     [reproduction]="reproduction()"
+    [eldest]="eldest()"
     (maintenanceDone)="done.push($event)"
     (feederChanged)="feederChanges.push($event)"
     (feederRefilled)="refills = refills + 1"
@@ -99,6 +100,7 @@ class StatusHost {
   readonly reviewOf = signal<(() => readonly ReviewPoint[]) | null>(null);
   readonly journal = signal<readonly JournalLine[] | null>(null);
   readonly reproduction = signal<string | null>(null);
+  readonly eldest = signal<string | null>(null);
   readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
   readonly highlighted = signal(0);
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
@@ -266,6 +268,20 @@ describe('rappel d’entretien (#513)', () => {
     button.click();
     flush();
     expect(root.querySelector('[data-review-detail]')).toBeNull();
+  });
+
+  it('doyen du bac (#877) : en tête du bilan déplié, absent sans doyen', () => {
+    const { host, root, flush } = mount();
+    host.reviewOf.set(() => []);
+    flush();
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    expect(root.querySelector('[data-review-eldest]')).toBeNull();
+    host.eldest.set('Doyen du bac : Néon, 2 ans et 3 jours.');
+    flush();
+    expect(root.querySelector('[data-review-eldest]')!.textContent!.trim()).toBe(
+      'Doyen du bac : Néon, 2 ans et 3 jours.',
+    );
   });
 
   it('journal (#581) : dans le bilan déplié ; vide, le dit ; rempli, liste datée', () => {

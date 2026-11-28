@@ -1,5 +1,7 @@
 import { signal } from '@angular/core';
 
+import { eldest } from '../../sim/aging';
+import { eldestText } from '../../sim/aging-text';
 import type { DayClock } from '../../sim/daylight';
 import {
   advanceFirstTankPath,
@@ -75,6 +77,8 @@ export class TankRecordsController {
   readonly journal = signal<readonly JournalLine[]>([]);
   /** Bilan de reproduction des derniers jours du bac affiché (#677) ; `null` en capture. */
   readonly reproduction = signal<string | null>(null);
+  /** Doyen du bac affiché (#877), en tête du bilan ; `null` en capture ou bac vide. */
+  readonly eldest = signal<string | null>(null);
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
   readonly firstTankPath = signal<FirstTankPathView | null>(null);
 
@@ -289,6 +293,7 @@ export class TankRecordsController {
     const journal = this.journalOf(world);
     const watch = this.journalWatches.get(world);
     const subject = {
+      seed: world.seed,
       time: world.time,
       entities: world.entities,
       ...(world.eggs === undefined ? {} : { eggs: world.eggs }),
@@ -310,5 +315,6 @@ export class TankRecordsController {
     }
     // Relu à chaque relevé : la période glisse avec les jours ; le texte, inchangé, ne republie rien.
     this.reproduction.set(reproductionText(reproductionSummary(journal.entries, world.time)));
+    this.eldest.set(eldestText(eldest(world)));
   }
 }

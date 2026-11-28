@@ -1,6 +1,12 @@
-import { ageSeconds, averageLifespanYears, DAYS_PER_YEAR, lifespanSeconds } from './aging';
+import {
+  ageSeconds,
+  averageLifespanYears,
+  DAYS_PER_YEAR,
+  lifespanSeconds,
+  type Eldest,
+} from './aging';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
-import type { SpeciesId } from './species';
+import { SPECIES, type SpeciesId } from './species';
 import { frenchNumber, speciesSheet, statusText } from './species-sheet';
 import type { World } from './world-types';
 
@@ -101,4 +107,12 @@ export function ageRows(species: SpeciesId, span: AgeSpan | undefined): readonly
     { field: 'age', label: 'Âge dans le bac', value: range + late, status: AGE_STATUS },
     average,
   ];
+}
+
+/** Ligne du doyen (#877) : « Doyen du bac : Néon, 2 ans et 3 jours. » ; `null` : bac vide. */
+export function eldestText(oldest: Eldest | null): string | null {
+  if (oldest === null) {
+    return null;
+  }
+  return `Doyen du bac : ${SPECIES[oldest.species].name}, ${ageText(oldest.age)}.`;
 }

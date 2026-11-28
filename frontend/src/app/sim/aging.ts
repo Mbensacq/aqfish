@@ -147,3 +147,33 @@ export function diesOfOldAge(animal: AgingSubject, clock: AgingClock, dt: number
 export function isBirthTime(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
+
+/** Doyen d'un bac (#877) : animal vivant le plus âgé, avec son âge. */
+export interface Eldest {
+  readonly id: number;
+  readonly species: SpeciesId;
+  /** Âge au temps du monde, en secondes simulées. */
+  readonly age: number;
+}
+
+/** Ce qu'`eldest` lit du monde : graine, temps et animaux vivants. */
+export interface EldestSubject {
+  readonly seed: number;
+  readonly time: number;
+  readonly entities: readonly AgingSubject[];
+}
+
+/**
+ * Doyen du bac (#877) : animal vivant le plus âgé au temps du monde ; à âge égal, le plus petit
+ * identifiant l'emporte (indépendant de l'ordre des animaux). `null` pour un bac vide.
+ */
+export function eldest(world: EldestSubject): Eldest | null {
+  let best: Eldest | null = null;
+  for (const animal of world.entities) {
+    const age = ageSeconds(animal, world.seed, world.time);
+    if (best === null || age > best.age || (age === best.age && animal.id < best.id)) {
+      best = { id: animal.id, species: animal.species, age };
+    }
+  }
+  return best;
+}
