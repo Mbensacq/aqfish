@@ -1,2 +1,3 @@
-Cycle 320 — branche cycle/c320-suites-vieillissement, PR #874, commit 71e7a61e, graine par défaut, 189 captures.
-Identiques au pixel près à c319 (cmp : 189/189).
+Cycle 321 — branche cycle/c321-retro-sprint-46, PR #879, commit f2774c3d (sur main v1.34.5).
+Graine par défaut des captures ; 189 captures, 184 tests de capture en 5,9 min.
+Comparaison : 189/189 identiques au pixel près (cmp) à la série c320.
