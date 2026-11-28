@@ -11713,7 +11713,7 @@
       "type": "fonctionnalite",
       "issue": 864,
       "pr": 882,
-      "version": null,
+      "version": "v1.35.1",
       "phases": {
         "planif": {
           "statut": "termine",
