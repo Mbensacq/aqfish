@@ -11794,10 +11794,10 @@
           "note": "Issue #876 : croissance des jeunes selon l'âge (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T07:44:08.509Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T08:33:06.832Z",
+          "note": "PR #886 : croissance des jeunes selon l'âge (ADR 0191), CI verte"
         }
       },
       "metriques": {}
