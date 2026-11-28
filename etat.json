@@ -11752,10 +11752,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T05:12:52.155Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T05:13:28.941Z",
+          "note": "Issue #862 : scénario S3 jouable dans l'interface (S)"
         }
       },
       "metriques": {}
