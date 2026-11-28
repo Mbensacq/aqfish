@@ -29,7 +29,8 @@ import { fungusSeverity, showsFungus } from '../sim/fungus';
 import { dropsyScales, dropsyStage, dropsySwelling, showsDropsy } from '../sim/dropsy';
 import { dullness } from '../sim/health-scale';
 import { floatsWhenDead } from '../sim/mortality';
-import { fryPallor, fryScale } from '../sim/fry';
+import { bodyScale } from '../sim/fish-growth';
+import { fryPallor } from '../sim/fry';
 import { PALETTE } from './palette';
 import {
   FRAY_ATTRIBUTE,
@@ -586,7 +587,7 @@ export class FishLayer {
   private readonly position = new Vector3();
   private readonly rotation = new Quaternion();
   private readonly euler = new Euler(0, 0, 0, 'YZX');
-  /** Échelle de l'instance : 1 pour un adulte, `fryScale` pour un alevin (issue #459). */
+  /** Échelle de l'instance : `bodyScale`, alevin (#459) ou jeune selon son âge (#876). */
   private readonly scale = new Vector3(1, 1, 1);
 
   /** Apparence affichée par cette couche. */
@@ -709,7 +710,7 @@ export class FishLayer {
       }
       this.rotation.setFromEuler(this.euler);
       this.position.set(pose.x, pose.y, pose.z);
-      this.scale.setScalar(fryScale(fish.growth));
+      this.scale.setScalar(bodyScale(fish, behavior?.time));
       this.bodyMatrix.compose(this.position, this.rotation, this.scale);
       this.body.setMatrixAt(n, this.bodyMatrix);
 
@@ -735,7 +736,7 @@ export class FishLayer {
       this.tailSignsB.setXYZW(n, fungus, pale, 0, 0);
       n++;
     }
-    n = this.placeDead(dead, alpha, seed, n);
+    n = this.placeDead(dead, alpha, seed, n, behavior?.time);
     this.body.count = n;
     this.tail.count = n;
     this.body.instanceMatrix.needsUpdate = true;
@@ -748,9 +749,16 @@ export class FishLayer {
   /**
    * Corps de l'espèce et de l'apparence de la couche (issue #582) après les vivants, à partir
    * de l'instance `start` : immobiles (queue droite), retournés (`DEAD_FLOAT_ROLL` ou
-   * `DEAD_GROUND_ROLL`) et grisés (`DEAD_DULLNESS`), sans autre signe. Renvoie le compte.
+   * `DEAD_GROUND_ROLL`) et grisés (`DEAD_DULLNESS`), sans autre signe, à leur taille au temps
+   * `time` (`bodyScale`). Renvoie le compte.
    */
-  private placeDead(dead: readonly Fish[], alpha: number, seed: number, start: number): number {
+  private placeDead(
+    dead: readonly Fish[],
+    alpha: number,
+    seed: number,
+    start: number,
+    time: number | undefined,
+  ): number {
     let n = start;
     for (let i = 0; i < dead.length && n < this.capacity; i++) {
       const body = dead[i];
@@ -765,7 +773,7 @@ export class FishLayer {
       this.euler.set(roll, -pose.yaw, 0);
       this.rotation.setFromEuler(this.euler);
       this.position.set(pose.x, pose.y, pose.z);
-      this.scale.setScalar(fryScale(body.growth));
+      this.scale.setScalar(bodyScale(body, time));
       this.bodyMatrix.compose(this.position, this.rotation, this.scale);
       this.body.setMatrixAt(n, this.bodyMatrix);
       this.tailMatrix.multiplyMatrices(this.bodyMatrix, this.hinge);

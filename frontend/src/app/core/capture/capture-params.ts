@@ -66,8 +66,9 @@
  *
  * Paramètre facultatif `alevins=1` (issue #459) : en mode capture, chaque femelle de guppy
  * met bas sa première portée à t = 0, alevins répartis entre les trois jalons de croissance
- * (`broodWorldInPlace`). Toute autre valeur ou absent : aucun alevin (séries existantes
- * inchangées).
+ * (`broodWorldInPlace`). `alevins=jeunes` (issue #876) : la même portée, âges étalés des
+ * alevins aux jeunes qui grandissent encore (`growWorldInPlace`). Toute autre valeur ou
+ * absent : aucun alevin (séries existantes inchangées).
  *
  * Paramètre facultatif `oeufs=1` (issue #478) : en mode capture, les corydoras pondent leur
  * première ponte à t = 0, âges étalés sur l'incubation (`layEggsWorldInPlace`). Toute autre
@@ -254,6 +255,8 @@ export interface CaptureParams {
   readonly dropsy: 'gonfle' | 'herisse' | null;
   /** Vrai pour `alevins=1` : alevins de guppy à t = 0, en capture (issue #459). */
   readonly fry: boolean;
+  /** Vrai pour `alevins=jeunes` : alevins et jeunes de tous âges à t = 0 (issue #876). */
+  readonly juveniles: boolean;
   /** Vrai pour `oeufs=1` : œufs de corydoras à t = 0, en capture (issue #478). */
   readonly eggs: boolean;
   /** Force du courant de `courant=` (issue #460), non vérifiée ; `null` si absent. */
@@ -401,6 +404,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   fungus: false,
   dropsy: null,
   fry: false,
+  juveniles: false,
   eggs: false,
   current: null,
   season: null,
@@ -475,6 +479,7 @@ export function parseCaptureParams(search: string): CaptureParams {
           ? 'gonfle'
           : null,
     fry: params.get('alevins') === '1',
+    juveniles: params.get('alevins') === 'jeunes',
     eggs: params.get('oeufs') === '1',
     current: params.get('courant'),
     season: params.get('saison'),

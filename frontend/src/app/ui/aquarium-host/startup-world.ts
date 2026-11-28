@@ -24,7 +24,7 @@ import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import { isCurrentLevel } from '../../sim/water-current';
 import { isPondSeason, setWorldSeasonInPlace } from '../../sim/pond-season';
 import { isWaterQuality, sampleWater } from '../../sim/water-quality';
-import { broodWorldInPlace } from '../../sim/fry-sample';
+import { broodWorldInPlace, growWorldInPlace } from '../../sim/fry-sample';
 import {
   createDefaultWorld,
   dropsyWorldInPlace,
@@ -154,7 +154,7 @@ function applySampleDiseases(world: MutableWorld, params: CaptureParams): void {
 
 /**
  * Vie et équipement d'exemple de capture à t = 0 : courant de `courant=` (#460), saison du
- * bassin de `saison=` (#864), alevins (#459), œufs (#478), feuilles de catappa (#239),
+ * bassin de `saison=` (#864), alevins (#459) et jeunes (#876), œufs (#478), feuilles de catappa (#239),
  * distributeur plein (#583).
  */
 function applyCaptureLife(world: MutableWorld, params: CaptureParams): void {
@@ -166,6 +166,9 @@ function applyCaptureLife(world: MutableWorld, params: CaptureParams): void {
   }
   if (params.fry) {
     broodWorldInPlace(world);
+  }
+  if (params.juveniles) {
+    growWorldInPlace(world);
   }
   if (params.eggs) {
     layEggsWorldInPlace(world);
