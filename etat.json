@@ -11762,6 +11762,12 @@
           "debut": "2026-11-28T05:14:05.197Z",
           "fin": "2026-11-28T06:23:17.736Z",
           "note": "PR #884 : S3 jouable, poisson rouge en bac d'eau froide redimensionnable (ADR 0190), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T06:23:56.256Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
