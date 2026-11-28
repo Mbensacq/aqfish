@@ -11914,10 +11914,10 @@
           "note": "Verdict OK, 0 bug, captures c328 publiées (192/192 identiques à c327)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T17:59:08.291Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T18:26:12.885Z",
+          "note": "PR #896 fusionnée → v1.35.6 (release CI OK), #895 et #891 fermées, CI main verte, aucune dette créée ; suppression de branche refusée"
         }
       },
       "metriques": {}
