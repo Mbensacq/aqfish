@@ -3,7 +3,8 @@ import { clampDecorPosition, floatAtSurface } from './decor-edit';
 import { environmentWater, isTankResizable } from './environment';
 import type { FoodPellet } from './food';
 import type { Fish } from './swimmer';
-import { clampTankDimensions, sameDimensions, type Box3, type TankDimensions } from './tank';
+import { sameDimensions, type Box3, type TankDimensions } from './tank';
+import { clampTankDimensionsIn } from './tank-limits';
 import { boundsFor, createWorld, seededObstacleCount } from './world';
 import type { MutableWorld, World } from './world-types';
 
@@ -11,7 +12,8 @@ import type { MutableWorld, World } from './world-types';
  * Dimensions réglables du bac (issue #171, ADR 0047) : changer la longueur, la hauteur ou la
  * profondeur du bac d'un monde, en gardant ce qu'il contient.
  *
- * - Les dimensions demandées sont bornées à `TANK_LIMITS`, au pas (`clampTankDimensions`).
+ * - Les dimensions demandées sont bornées à celles de l'environnement, au pas
+ *   (`clampTankDimensionsIn`, #885).
  * - Chaque élément du décor est ramené dans le bac compte tenu de son emprise
  *   (`clampDecorPosition`) ; sa graine, son genre, sa forme, sa rotation et son échelle ne
  *   changent pas. Une élévation (élément posé sur un autre) est bornée à la hauteur du bac ;
@@ -37,7 +39,7 @@ export function setTankDimensionsInPlace(
   ) {
     return null;
   }
-  const dimensions = clampTankDimensions(dims);
+  const dimensions = clampTankDimensionsIn(world.environment, dims);
   if (world.dimensions !== undefined && sameDimensions(world.dimensions, dimensions)) {
     return world.dimensions;
   }

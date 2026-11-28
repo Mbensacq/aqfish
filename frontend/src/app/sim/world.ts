@@ -151,7 +151,7 @@ import {
 } from './pond-shape';
 import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type SwimBounds } from './swimmer';
-import { clampTankDimensions, type TankDimensions } from './tank';
+import { clampTankDimensionsIn } from './tank-limits';
 import { assertTimeStep } from './time-step';
 import {
   initialMaintenance,
@@ -279,17 +279,18 @@ export function createWorld(
 }
 
 /**
- * Dimensions réglées d'un lieu, bornées (`clampTankDimensions`), ou `undefined` sans réglage.
+ * Dimensions réglées d'un lieu, bornées à celles de son environnement (`clampTankDimensionsIn`,
+ * #885), ou `undefined` sans réglage.
  * @throws RangeError si l'environnement du lieu n'a pas de dimensions réglables.
  */
-function worldDimensions(place: Place): TankDimensions | undefined {
+function worldDimensions(place: Place) {
   if (typeof place === 'string' || place.dimensions === undefined) {
     return undefined;
   }
   if (!isTankResizable(place.environment)) {
     throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
   }
-  return clampTankDimensions(place.dimensions);
+  return clampTankDimensionsIn(place.environment, place.dimensions);
 }
 
 /**

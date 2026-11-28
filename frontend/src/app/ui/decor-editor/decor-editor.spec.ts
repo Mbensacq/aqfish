@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { MAX_DECOR_ITEMS } from '../../sim/decor-edit';
+import { COLD_TANK_DIMENSIONS, type EnvironmentId } from '../../sim/environment';
 import { MAX_ROOM_ITEMS } from '../../sim/room';
 import { DEFAULT_TANK, type TankDimensions } from '../../sim/tank';
 import {
@@ -74,6 +75,7 @@ describe('decorEditorHint', () => {
       [count]="count()"
       [refused]="refused()"
       [dimensions]="dimensions()"
+      [environment]="environment()"
       [roomTools]="roomTools()"
       [roomSelected]="roomSelected()"
       [roomCount]="roomCount()"
@@ -97,6 +99,7 @@ class TestHost {
   readonly count = signal(10);
   readonly refused = signal(false);
   readonly dimensions = signal<TankDimensions | null>(DEFAULT_TANK);
+  readonly environment = signal<EnvironmentId>('tropical');
   readonly dims: TankDimensions[] = [];
   readonly tools: EditorTool[] = [];
   readonly rotations: number[] = [];
@@ -261,6 +264,24 @@ describe('DecorEditor', () => {
     host().dimensions.set(null);
     await fixture.whenStable();
     expect(root().querySelector('[data-tank-dimensions]')).toBeNull();
+  });
+
+  it('bac d’eau froide (#885) : hauteur affichée à 45 cm, gardée quand la longueur change', async () => {
+    // Nouvel éditeur ouvert sur le bac d'eau froide : le minimum est posé avant la valeur.
+    fixture.destroy();
+    fixture = TestBed.createComponent(TestHost);
+    host().environment.set('eaufroide');
+    host().dimensions.set(COLD_TANK_DIMENSIONS);
+    await fixture.whenStable();
+    const slider = (k: string) =>
+      root().querySelector<HTMLInputElement>(`[data-dimension="${k}"]`)!;
+    expect(slider('height').min).toBe('45');
+    expect(slider('height').value).toBe('45');
+    expect(slider('height').getAttribute('aria-valuetext')).toBe('45 cm');
+    expect(slider('width').min).toBe('60');
+    slider('width').value = '120';
+    slider('width').dispatchEvent(new Event('change'));
+    expect(host().dims).toEqual([{ width: 1.2, height: 0.45, depth: 0.45 }]);
   });
 
   it('pièce affichée (#188) : outils de la pièce, compte, échelle inactive pour un meuble', async () => {

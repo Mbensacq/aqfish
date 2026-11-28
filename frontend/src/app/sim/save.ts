@@ -27,7 +27,8 @@ import { DEFAULT_POND_SHAPE, isPondShape, type PondShape } from './pond-shape';
 import type { Fish } from './swimmer';
 import { copyWater, readWater, type WaterState } from './water';
 import { savedWorldInGameUnits, schema1ToMgPerLiter } from './save-units';
-import { clampTankDimensions, type TankDimensions } from './tank';
+import type { TankDimensions } from './tank';
+import { clampTankDimensionsIn } from './tank-limits';
 import {
   describe,
   field,
@@ -729,8 +730,8 @@ const DIMENSION_RULES: readonly FieldRule[] = (['width', 'height', 'depth'] as c
 
 /**
  * Dimensions réglées d'une sauvegarde : `undefined` si absentes ; sinon trois réels finis,
- * bornés à `TANK_LIMITS` (`clampTankDimensions` : une valeur hors bornes est ramenée, pas
- * refusée), dans un environnement qui les accepte (`isTankResizable`).
+ * bornés à ceux de l'environnement (`clampTankDimensionsIn`, #885 : une valeur hors bornes est
+ * ramenée, pas refusée), dans un environnement qui les accepte (`isTankResizable`).
  */
 function parseDimensions(
   value: unknown,
@@ -753,7 +754,7 @@ function parseDimensions(
     problems.push(problem);
     return undefined;
   }
-  return clampTankDimensions({
+  return clampTankDimensionsIn(environment, {
     width: own(value, 'width') as number,
     height: own(value, 'height') as number,
     depth: own(value, 'depth') as number,

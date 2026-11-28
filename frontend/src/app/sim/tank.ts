@@ -111,15 +111,19 @@ export function clampDimension(value: number, range: DimensionRange, fallback: n
 }
 
 /**
- * Dimensions `dims` bornées à `TANK_LIMITS`, au pas (`clampDimension`) : une valeur hors des
- * bornes est ramenée à la borne, jamais refusée ; une valeur non finie prend celle de
- * `DEFAULT_TANK`. Renvoie un nouvel objet.
+ * Dimensions `dims` bornées à `limits` (`TANK_LIMITS` par défaut ; celles d'un environnement :
+ * `sim/tank-limits.ts`, #885), au pas (`clampDimension`) : une valeur hors des bornes est
+ * ramenée à la borne, jamais refusée ; une valeur non finie prend celle de `DEFAULT_TANK`.
+ * Renvoie un nouvel objet.
  */
-export function clampTankDimensions(dims: TankDimensions): TankDimensions {
+export function clampTankDimensions(
+  dims: TankDimensions,
+  limits: Readonly<Record<keyof TankDimensions, DimensionRange>> = TANK_LIMITS,
+): TankDimensions {
   return {
-    width: clampDimension(dims.width, TANK_LIMITS.width, DEFAULT_TANK.width),
-    height: clampDimension(dims.height, TANK_LIMITS.height, DEFAULT_TANK.height),
-    depth: clampDimension(dims.depth, TANK_LIMITS.depth, DEFAULT_TANK.depth),
+    width: clampDimension(dims.width, limits.width, DEFAULT_TANK.width),
+    height: clampDimension(dims.height, limits.height, DEFAULT_TANK.height),
+    depth: clampDimension(dims.depth, limits.depth, DEFAULT_TANK.depth),
   };
 }
 
