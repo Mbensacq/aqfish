@@ -11783,7 +11783,7 @@
       "date": "2026-11-28",
       "debut": "2026-11-28T07:43:11.569Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 876,
       "pr": null,
       "version": null,
       "phases": {
