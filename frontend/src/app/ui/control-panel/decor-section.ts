@@ -5,7 +5,7 @@ import { SettingMark } from '../settings-window/settings-search-filter';
 
 /**
  * Section « Décor » du panneau « Réglages » (#52 ; sortie du panneau au #697) : « Éditer le
- * décor » sur la ligne du titre (#167, bac tropical seulement), case « Afficher le décor » et
+ * décor » sur la ligne du titre (#167, bacs tropical et d'eau froide seulement), case « Afficher le décor » et
  * rendu des granulés (#117) sur la même ligne.
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
@@ -27,7 +27,9 @@ import { SettingMark } from '../settings-window/settings-search-filter';
         data-decor-edit
         [attr.aria-disabled]="!decorEditable()"
         [attr.aria-label]="
-          decorEditable() ? 'Éditer le décor' : 'Éditer le décor (bac tropical seulement)'
+          decorEditable()
+            ? 'Éditer le décor'
+            : 'Éditer le décor (bacs tropical et d’eau froide seulement)'
         "
         [attr.title]="decorEditable() ? null : 'Bac tropical seulement'"
         (click)="onEdit()"

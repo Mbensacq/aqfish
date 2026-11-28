@@ -137,8 +137,9 @@ Règles :
 (raison du refus sous la tuile), affiche l'occupation et le volume réel (section « Population »,
 bilan du bac) et signale un bac trop plein (section « Population », message d'import). Bassin et
 paludarium par défaut ramenés sous leur capacité (#811, ADR 0173, `docs/ESPECES.md` point 19).
-#729 fermée au cycle 314 ; reste S3 **jouable** dans l'interface (le poisson rouge ne vit qu'au
-bassin) : #862.
+#729 fermée au cycle 314. **S3 jouable** (#862, ADR 0190) : poisson rouge proposé au bac d'eau
+froide, redimensionnable ; à 80 × 40 × 50 cm (environ 123 L), sans axolotl, le deuxième poisson
+rouge est refusé avec la raison OATA (`e2e/capacite-bac.spec.ts`).
 
 ### 3.2 Compatibilités
 

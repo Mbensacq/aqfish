@@ -1350,6 +1350,13 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   même vérification comptée dans une variable puis testée une fois prend 14 s. Compter dans la
   boucle, un seul `expect` après. (2026-11-07)
 
+- **Proposer une espèce à un environnement change `data-aqfish-population`** (cycle 324, #862) :
+  l'attribut liste toutes les espèces proposées, même à 0 (`axolotl:2,rouge:0`), et la liste
+  « Ajoutables » du wiki aussi. Ajouter une espèce à `Environment.species` casse donc les e2e qui
+  comparent l'attribut en entier (`environnement.spec.ts`) et les tests qui figent la liste
+  (`axolotl.spec.ts`, `poisson-rouge.spec.ts`, `species-wiki.spec.ts`) : les chercher avec
+  `grep -rn "<environnement>" e2e src --include=*.spec.ts` avant de pousser. (2026-11-28)
+
 ## Simulation
 
 - **Température de référence du bassin : `ambientTemperature`, pas `WATER_TEMPERATURES`**
