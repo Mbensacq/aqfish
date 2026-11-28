@@ -11777,6 +11777,24 @@
         }
       },
       "metriques": {}
+    },
+    "325": {
+      "numero": 325,
+      "date": "2026-11-28",
+      "debut": "2026-11-28T07:43:11.569Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T07:43:11.569Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
