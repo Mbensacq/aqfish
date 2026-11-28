@@ -11756,6 +11756,12 @@
           "debut": "2026-11-28T05:12:52.155Z",
           "fin": "2026-11-28T05:13:28.941Z",
           "note": "Issue #862 : scénario S3 jouable dans l'interface (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T05:14:05.197Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
