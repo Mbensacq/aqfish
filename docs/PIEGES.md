@@ -2222,7 +2222,10 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   place du bureau (`desk-slot`, entre « Réglages » et l'aide-mémoire) ne fait que `100vw − 479 px` ;
   les cinq jauges (5 × 84 px au moins) et la simulation (`flex: none`) n'y tiennent pas, et la
   grille débordait sous l'heure sans que rien ne casse. Le cadre passe en `flex-wrap: wrap` avec
-  une base de jauges **explicite** (`calc(5 * 84px + 4 * 10px)`) : avec `flex-basis: auto`, le
-  retour à la ligne se déciderait sur la largeur max-content des jauges et ferait passer la
-  simulation à la ligne dès 1280 px (captures changées). Mesurer les boîtes
-  (`e2e/bandeau-haut-largeurs.spec.ts`), pas seulement le débordement de la fenêtre. (2026-11-28)
+  une base de jauges **explicite** (`calc(5 * 84px + 4 * 10px - 8px)`) : avec `flex-basis: auto`,
+  le retour à la ligne se déciderait sur la largeur max-content des jauges et ferait passer la
+  simulation à la ligne dès 1280 px (captures changées). Le bouton « Eau » est plus large à l'état
+  « Mauvaise » qu'à « Bonne » : à 768 px, eau saine sur une ligne, eau en alerte sur deux. Sur
+  tablette, l'aide-mémoire (posé à 129 px) suit alors `--aqfish-frame-height`. Mesurer les
+  boîtes (`e2e/bandeau-haut-largeurs.spec.ts`), pas seulement le débordement de la fenêtre.
+  (2026-11-28)
