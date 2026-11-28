@@ -11650,10 +11650,10 @@
           "note": "Issue #878 : rétro sprint 46, plan sprint 47 (#860, #864, #862, #876, #877), dette #875 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T23:43:45.798Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T00:11:55.500Z",
+          "note": "PR #879 : #875 (sameAgeDays en oracle de test) + ROADMAP v1.34/v1.35, CI verte ; aucune rétro ancienne à fermer ; e2e locaux partiels (185/568 verts), CI complète verte"
         }
       },
       "metriques": {}
