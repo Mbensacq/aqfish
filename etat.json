@@ -11734,10 +11734,10 @@
           "note": "Verdict OK, 0 bug, captures c323 publiées (187/189 identiques ; été/hiver visuellement proches)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T04:41:26.453Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T05:12:15.187Z",
+          "note": "PR #882 fusionnée → v1.35.1 (release CI OK, CI main verte), #864 fermée ; dette #883 (saison invisible à l'image)"
         }
       },
       "metriques": {}
