@@ -11866,10 +11866,10 @@
           "note": "Issue #885 : libellés éditeur + hauteur bac eau froide, avec bug #881 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T14:26:20.834Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T15:43:33.921Z",
+          "note": "PR #890 : libellés éditeur, bornes par environnement (eau froide 45 cm), cadre haut #881, CI verte"
         }
       },
       "metriques": {}
