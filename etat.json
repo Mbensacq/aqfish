@@ -11662,10 +11662,10 @@
           "note": "Verdict OK, 0 bug, captures c321 publiées (189/189 identiques à c320)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T00:30:14.495Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T00:59:53.427Z",
+          "note": "PR #879 fusionnée → v1.34.6 (release CI OK, CI main verte), #875 et #878 fermées ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
