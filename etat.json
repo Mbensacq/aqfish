@@ -11722,10 +11722,10 @@
           "note": "Issue #864 : saisons du bassin, option de réglage et captures (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T03:09:35.569Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T04:11:30.812Z",
+          "note": "PR #882 : option et captures des saisons du bassin (#864), CI verte ; corrige la liste des lieux recouverte au bassin ; e2e saisons dans forme-bassin.spec (budget parts #600)"
         }
       },
       "metriques": {}
