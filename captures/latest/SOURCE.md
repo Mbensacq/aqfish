@@ -1,3 +1,5 @@
-Cycle 321 — branche cycle/c321-retro-sprint-46, PR #879, commit f2774c3d (sur main v1.34.5).
-Graine par défaut des captures ; 189 captures, 184 tests de capture en 5,9 min.
-Comparaison : 189/189 identiques au pixel près (cmp) à la série c320.
+# Captures c322
+- Branche : cycle/c322-album-photo (PR #880), commit 03a2d7c31427f15893386bbb9f524d566ecb797a
+- Graine : 7 (série standard), temps de jeu : celui des scénarios de captures.spec.ts
+- 157/189 identiques à c321 ; 32 diffèrent uniquement dans la bande de la barre des vues (y 664–704, bouton « Album » ajouté).
+- Nouveautés : dev/album-*.png (bureau, moyen, téléphone)
