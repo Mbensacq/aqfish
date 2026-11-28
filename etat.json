@@ -11680,10 +11680,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T01:00:29.967Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T01:00:50.218Z",
+          "note": "Issue #860 : album photo du bac (M)"
         }
       },
       "metriques": {}
