@@ -187,9 +187,11 @@ export { sliderHour } from './day-section';
             [environment]="environment()"
             [pondShape]="pondShape()"
             [roomShown]="roomShown()"
+            [pondSeasons]="pondSeasons()"
             (environmentChanged)="environmentChanged.emit($event)"
             (pondShapeChanged)="pondShapeChanged.emit($event)"
             (roomShownChanged)="roomShownChanged.emit($event)"
+            (pondSeasonsChanged)="pondSeasonsChanged.emit($event)"
           ></fieldset>
 
           <fieldset
@@ -410,6 +412,8 @@ export class ControlPanel implements SettingsSearchFilter {
   readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
   /** Forme du bassin du monde courant (issue #190, fournie par l'hôte). */
   readonly pondShape = input<PondShape>(DEFAULT_POND_SHAPE);
+  /** Saisons du bassin actives (issue #864, fournies par l'hôte). */
+  readonly pondSeasons = input(true);
   /** Vitesse de simulation courante (fournie par l'hôte). */
   readonly speed = input<number>(DEFAULT_SIM_SPEED);
   /** Heure affichée, au quart d'heure (fournie par l'hôte). */
@@ -475,6 +479,8 @@ export class ControlPanel implements SettingsSearchFilter {
   readonly environmentChanged = output<EnvironmentId>();
   /** Forme du bassin choisie (issue #190). */
   readonly pondShapeChanged = output<PondShape>();
+  /** Case « Saisons » du bassin (issue #864). */
+  readonly pondSeasonsChanged = output<boolean>();
   /** Vitesse choisie au curseur. */
   readonly speedChanged = output<SimSpeed>();
   /** Heure choisie au curseur (l'hôte fige l'horloge à cette heure). */

@@ -188,6 +188,8 @@ export interface SavedWorld {
   readonly feeder?: FeederState;
   /** Mortalité activée (#582) : absente des sauvegardes antérieures, jamais écrite à faux. */
   readonly mortality?: true;
+  /** Saisons du bassin coupées (#864) : absent des sauvegardes antérieures, jamais écrit à faux. */
+  readonly seasonsOff?: true;
   /** Corps des animaux morts (#582) : absents des sauvegardes antérieures, jamais écrits vides. */
   readonly dead?: readonly (SavedFish & {
     readonly deadFor: number;
@@ -304,18 +306,25 @@ function savedOptionalParts(world: World): Partial<SavedWorld> {
       : { firstTankPath: copyFirstTankPath(world.firstTankPath) }),
     ...(world.feeder === undefined ? {} : { feeder: copyFeeder(world.feeder) }),
     ...(world.mortality === true ? { mortality: true } : {}),
-    ...(world.dead === undefined || world.dead.length === 0
-      ? {}
-      : {
-          dead: world.dead.map((body) => ({
-            ...savedFish(body),
-            deadFor: body.deadFor,
-            ...(body.cause === undefined ? {} : { cause: body.cause }),
-          })),
-        }),
+    ...(world.seasonsOff === true ? { seasonsOff: true } : {}),
+    ...savedDeadPart(world),
     ...(world.exuviae === undefined || world.exuviae.length === 0
       ? {}
       : { exuviae: world.exuviae.map((shell) => ({ ...shell })) }),
+  };
+}
+
+/** Corps des animaux morts enregistrés (#582) : omis s'il n'y en a aucun. */
+function savedDeadPart(world: World): Pick<SavedWorld, 'dead'> {
+  if (world.dead === undefined || world.dead.length === 0) {
+    return {};
+  }
+  return {
+    dead: world.dead.map((body) => ({
+      ...savedFish(body),
+      deadFor: body.deadFor,
+      ...(body.cause === undefined ? {} : { cause: body.cause }),
+    })),
   };
 }
 
@@ -506,6 +515,13 @@ const MORTALITY_RULE = field(
   (v) => `mortality doit valoir true (reçu : ${describe(v)})`,
 );
 
+/** Saisons du bassin coupées (#864) : option absente, saisons actives ; jamais écrite à faux. */
+const SEASONS_OFF_RULE = field(
+  'seasonsOff',
+  optional((v) => v === true),
+  (v) => `seasonsOff doit valoir true (reçu : ${describe(v)})`,
+);
+
 const DECOR_LIST: ListRule = {
   key: 'decor',
   max: MAX_SAVE_DECOR,
@@ -533,6 +549,7 @@ interface WorldParts extends WorldStates {
   readonly current?: Exclude<CurrentLevel, 'coupe'>;
   readonly eggs?: Egg[];
   readonly mortality?: true;
+  readonly seasonsOff?: true;
   readonly dead?: DeadAnimal[];
   readonly exuviae?: Exuvia[];
   readonly water?: WaterState;
@@ -553,6 +570,7 @@ const WORLD_PART_ORDER = [
   'firstTankPath',
   'eggs',
   'mortality',
+  'seasonsOff',
   'dead',
   'exuviae',
 ] as const;
@@ -629,7 +647,7 @@ function parseWorldParts(
   const food = parseFoodList(own(value, 'food'), place, own(value, 'nextFoodId'), problems);
   const eggs = parseEggList(own(value, 'eggs'), place, problems);
   const states = parseStates(value, environment, problems);
-  problems.push(...problemsOf(value, [MORTALITY_RULE]));
+  problems.push(...problemsOf(value, [MORTALITY_RULE, SEASONS_OFF_RULE]));
   const dead = parseDeadList(own(value, 'dead'), context, fish, problems);
   const exuviae = parseExuviaList(own(value, 'exuviae'), place, problems);
   return {
@@ -641,6 +659,7 @@ function parseWorldParts(
     eggs: eggs.length > 0 ? eggs : undefined,
     ...states,
     mortality: own(value, 'mortality') === true ? true : undefined,
+    seasonsOff: own(value, 'seasonsOff') === true ? true : undefined,
     dead: dead.length > 0 ? dead : undefined,
     exuviae: exuviae.length > 0 ? exuviae : undefined,
     water: parseWaterField(own(value, 'water'), environment, problems),

@@ -19,8 +19,8 @@ import { environmentName } from './panel-views';
 
 /**
  * Section « Environnement » du panneau « Réglages » (#87 ; sortie du panneau au #697) : la
- * liste des lieux, puis sur la même ligne la forme du bassin (#190, bassin seulement) ou la
- * case « Afficher la pièce » (#187, bac tropical seulement).
+ * liste des lieux, puis sur la même ligne la forme du bassin et la case « Saisons » (#190,
+ * #864, bassin seulement) ou la case « Afficher la pièce » (#187, bac tropical seulement).
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
@@ -68,6 +68,21 @@ import { environmentName } from './panel-views';
             </option>
           }
         </select>
+        <!-- Saisons du bassin (#864) : à la place de la pièce, sur la ligne de « Lieu ». -->
+        <label
+          class="control-panel__check control-panel__check--inline"
+          data-pond-seasons
+          appSetting="Saisons du bassin"
+          title="Coupées, le bassin garde 18 °C toute l’année"
+        >
+          <input
+            type="checkbox"
+            aria-label="Saisons du bassin"
+            [checked]="pondSeasons()"
+            (change)="onPondSeasons($event)"
+          />
+          Saisons
+        </label>
       }
       @if (roomAvailable()) {
         <label
@@ -89,6 +104,8 @@ export class EnvironmentSection {
   readonly pondShape = input<PondShape>(DEFAULT_POND_SHAPE);
   /** Pièce autour du bac affichée (#187). */
   readonly roomShown = input(false);
+  /** Saisons du bassin actives (#864). */
+  readonly pondSeasons = input(true);
 
   /** Environnement choisi dans la liste. */
   readonly environmentChanged = output<EnvironmentId>();
@@ -96,6 +113,8 @@ export class EnvironmentSection {
   readonly pondShapeChanged = output<PondShape>();
   /** Case « Afficher la pièce » (#187). */
   readonly roomShownChanged = output<boolean>();
+  /** Case « Saisons » du bassin (#864). */
+  readonly pondSeasonsChanged = output<boolean>();
 
   protected readonly environmentIds = ENVIRONMENT_IDS;
   protected readonly environmentName = environmentName;
@@ -118,6 +137,10 @@ export class EnvironmentSection {
     if (isPondShape(value)) {
       this.pondShapeChanged.emit(value);
     }
+  }
+
+  protected onPondSeasons(event: Event): void {
+    this.pondSeasonsChanged.emit((event.target as HTMLInputElement).checked);
   }
 
   protected onRoom(event: Event): void {

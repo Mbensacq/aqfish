@@ -400,6 +400,10 @@ test.describe('Captures', () => {
       name: 'bassin-side-poissons-rouges',
       query: 'environnement=bassin&camera=side&population=koi:5,rouge:6',
     },
+    // Saisons du bassin (#864) : en hiver (4 °C), les koïs se tiennent au fond ; en été (24 °C),
+    // nage normale. Vues de côté, comme `bassin-side`.
+    { name: 'bassin-side-hiver', query: 'environnement=bassin&camera=side&saison=hiver' },
+    { name: 'bassin-side-ete', query: 'environnement=bassin&camera=side&saison=ete' },
     { name: 'bassin-front', query: 'environnement=bassin&camera=front' },
     { name: 'bassin-bottom', query: 'environnement=bassin&camera=bottom' },
     // Pluie (#106) : gouttes et ronds à la surface, de dessus et en trois-quarts.

@@ -34,6 +34,19 @@ describe('createStartupWorld (#696)', () => {
     expect(world).not.toEqual(createDefaultWorld(3));
   });
 
+  it('saison=hiver (#864) : en capture au bassin seulement, saison inconnue ignorée', () => {
+    const winter = start('?capture=1&seed=7&environnement=bassin&saison=hiver').world;
+    expect(winter.seasonStartDay).toBe(22);
+    expect(winter.water.temperature).toBeCloseTo(4, 3);
+    expect(start('?seed=7&environnement=bassin&saison=hiver').world).toEqual(
+      createDefaultWorld(7, 'bassin'),
+    );
+    expect(start('?capture=1&seed=7&environnement=bassin&saison=canicule').world).toEqual(
+      createDefaultWorld(7, 'bassin'),
+    );
+    expect(start('?capture=1&seed=7&saison=ete').world).toEqual(createDefaultWorld(7));
+  });
+
   it('mort=1 : la mortalité est activée et un corps apparaît', () => {
     const { world } = start('?seed=3&mort=1');
     expect(world.dead).toBeDefined();

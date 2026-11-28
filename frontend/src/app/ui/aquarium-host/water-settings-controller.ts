@@ -1,5 +1,6 @@
 import { addJournalEntry, waterChangeEntry, type Journal } from '../../sim/journal';
 import type { MaintenanceTask } from '../../sim/maintenance';
+import { setWorldSeasonsInPlace } from '../../sim/pond-season';
 import { isCurrentLevel, nextCurrentLevel, type CurrentLevel } from '../../sim/water-current';
 import { markWaterChange, type WaterHistory } from '../../sim/water-history';
 import {
@@ -35,8 +36,8 @@ export interface WaterSettingsPorts {
 
 /**
  * Réglages de l'eau du bac affiché par l'utilisateur : changement d'eau (#207), chauffage,
- * éclairage et lampe (#476, #584), distributeur (#583), catappa (#239), courant (#460) et
- * tâches d'entretien sans geste (#513). Chacun est suivi d'un relevé, d'un enregistrement et
+ * éclairage et lampe (#476, #584), distributeur (#583), catappa (#239), courant (#460),
+ * saisons du bassin (#864) et tâches d'entretien sans geste (#513). Chacun est suivi d'un relevé, d'un enregistrement et
  * d'une image. Sorti de l'hôte au lot 10 de l'assainissement (#696), sans changement de
  * comportement.
  */
@@ -125,6 +126,14 @@ export class WaterSettingsController {
     this.apply((world) => {
       refillWorldFeederInPlace(world);
     });
+  }
+
+  /**
+   * Active ou coupe les saisons du bassin (#864, `setWorldSeasonsInPlace`), puis relevé et
+   * enregistrement : l'option est sauvegardée avec le monde. Sans effet en mode capture.
+   */
+  setSeasons(enabled: boolean): void {
+    this.apply((world) => setWorldSeasonsInPlace(world, enabled));
   }
 
   /** Nombre de feuilles de catappa (#239), de 0 à `MAX_CATAPPA_LEAVES`. */

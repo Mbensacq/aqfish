@@ -145,6 +145,19 @@ export interface World {
    */
   readonly mortality?: true;
   /**
+   * Saisons du bassin coupées (issue #864, `sim/pond-season.ts`, ADR 0186) : le bassin garde
+   * alors ses 18 °C fixes (`WATER_TEMPERATURES`), sans température ambiante saisonnière.
+   * Absent : saisons actives (bassin par défaut, anciennes sauvegardes) ; jamais enregistré à
+   * `false`. Sans effet hors du bassin.
+   */
+  readonly seasonsOff?: true;
+  /**
+   * Jour de l'année au temps 0 du calendrier du bassin (issue #864), dans [0, 365[ : posé par
+   * le paramètre de capture `saison=` seulement, jamais enregistré. Absent :
+   * `START_DAY_OF_YEAR` (19 mai).
+   */
+  readonly seasonStartDay?: number;
+  /**
    * Corps des animaux morts (issue #582), dans l'ordre des décès : ils ne nagent plus,
    * flottent ou reposent au fond et polluent l'eau jusqu'à leur retrait (`removeDeadInPlace`).
    * Absents tant qu'aucun corps n'est dans le bac.

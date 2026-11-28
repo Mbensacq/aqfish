@@ -149,6 +149,8 @@ export class TankReadoutsController {
   readonly tankDimensions = signal<TankDimensions | null>(null);
   /** Forme du bassin du monde courant (issue #190) : rectangle hors du bassin. */
   readonly pondShape = signal<PondShape>(DEFAULT_POND_SHAPE);
+  /** Saisons du bassin actives (#864, `World.seasonsOff`) : case du panneau, au bassin. */
+  readonly pondSeasons = signal(true);
   /** Litres d'eau du bac du monde courant (#237, avertissements d'ajout), `null` avant le départ. */
   readonly tankLiters = signal<number | null>(null);
 
@@ -241,7 +243,10 @@ export class TankReadoutsController {
     }
     this.waterReadTick = world.tick;
     ports.refreshTankList();
-    this.waterSample.set(waterSample(world.water, world.environment, world.tick));
+    this.waterSample.set(
+      waterSample(world.water, world.environment, world.tick, world.seasonStartDay),
+    );
+    this.pondSeasons.set(world.seasonsOff !== true);
     ports.care.refreshReadouts(world);
     ports.probe.publishFilterBacteria(filterMaturityPercent(world.water));
     this.untreatedTap.set(world.water.untreatedTap === true);
