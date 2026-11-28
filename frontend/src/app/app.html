@@ -70,6 +70,7 @@
         [capacityLine]="aquarium.capacity().text"
         [journal]="aquarium.journal()"
         [reproduction]="aquarium.reproduction()"
+        [eldest]="aquarium.eldest()"
         (maintenanceDone)="aquarium.markMaintenanceDone($event)"
         (careSessionRequested)="aquarium.openCareSession()"
         (feederChanged)="aquarium.setFeeder($event)"

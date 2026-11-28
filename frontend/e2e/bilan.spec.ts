@@ -72,6 +72,12 @@ test('390 × 844 : le bouton reste dans la marge et le bilan se déplie', async 
   expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   await button.click();
   await expect(page.locator('[data-review-empty]')).toBeVisible();
+  // Doyen du bac (#877) : une ligne lisible, entière dans la largeur de l'écran.
+  const eldest = page.locator('[data-review-eldest]');
+  await expect(eldest).toHaveText(/^Doyen du bac : .+, .+\.$/);
+  const line = await eldest.boundingBox();
+  expect(line!.x).toBeGreaterThanOrEqual(0);
+  expect(line!.x + line!.width).toBeLessThanOrEqual(390);
   const captureDir = process.env['CAPTURE_DIR'];
   if (captureDir) {
     await page.screenshot({ path: `${captureDir}/bilan-390.png` });

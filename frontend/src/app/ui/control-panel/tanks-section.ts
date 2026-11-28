@@ -31,7 +31,7 @@ import type { SpeciesId } from '../../sim/species';
 import { tankListDetail, tankListHint, type TankListEntry } from '../../sim/tank-list';
 import type { TreatmentKind } from '../../sim/treatment';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
-import type { TankNotice } from '../aquarium-host/aquarium-host';
+import type { TankNotice } from '../aquarium-host/tank-room-controller';
 import { isQuarantineShown, panelCatalog } from './panel-views';
 import { SettingMark } from '../settings-window/settings-search-filter';
 import { QuarantineSection } from './quarantine-section';

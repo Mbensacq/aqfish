@@ -3,6 +3,7 @@ import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import { DISEASES, type DiseaseField } from './diseases';
 import { laysEggs, type Egg } from './eggs';
 import { hasFry, isFry } from './fry';
+import { birthdayWatch, pushBirthdayEvents } from './journal-birthdays';
 import type { DeadAnimal } from './mortality';
 import type { Exuvia } from './shrimp-molt';
 import { SPECIES, type SpeciesId } from './species';
@@ -52,6 +53,7 @@ export const JOURNAL_KINDS = [
   'eauNeuve',
   'vieillesse',
   'mue',
+  'anniversaire',
 ] as const;
 
 export type JournalKind = (typeof JOURNAL_KINDS)[number];
@@ -91,6 +93,7 @@ export const JOURNAL_KIND_GROUPS: Readonly<Record<JournalKind, JournalGroup>> = 
   alerte: 'alertes',
   vieillesse: 'sante',
   mue: 'sante',
+  anniversaire: 'sante',
 };
 
 /** Texte d'un journal sans ligne, ou sans ligne du type choisi (#655). */
@@ -107,7 +110,7 @@ export interface JournalEntry {
   /**
    * Précision selon la sorte : maladie (`DiseaseField`) pour `maladie` et `guerison`, sorte de
    * traitement (`TreatmentKind`) pour `traitement`, espèce (`SpeciesId`) pour `ponte`,
-   * `eclosion`, `naissance`, `vieillesse` (#857) et `mue` (#859), alerte (`JournalAlertId`) pour `alerte` ; absente pour
+   * `eclosion`, `naissance`, `vieillesse` (#857), `mue` (#859) et `anniversaire` (#877), alerte (`JournalAlertId`) pour `alerte` ; absente pour
    * `changementEau`, `seance`, `taille` et `eauNeuve`.
    */
   readonly detail?: string;
@@ -117,6 +120,8 @@ export interface JournalEntry {
    * Nombre d'animaux, d'œufs ou de coupes (`taille`) concernés (≥ 1) ; absent : sans objet.
    */
   readonly count?: number;
+  /** Années révolues atteintes (≥ 1), pour `anniversaire` seulement (#877). */
+  readonly years?: number;
 }
 
 /** Journal d'un bac. Modifié en place par `addJournalEntry`. */
@@ -270,10 +275,14 @@ export interface JournalWatch {
   deadSeen: Set<number>;
   /** Temps de la dernière mue vue (#859) : seules les exuvies plus récentes sont notées. */
   moltSeen: number;
+  /** Années révolues de chaque animal vivant (#877) : un anniversaire n'est noté qu'une fois. */
+  birthdays: Map<number, number>;
 }
 
 /** Ce qu'`observeJournal` lit du monde. */
 export interface JournalSubject {
+  /** Graine du monde (#877), pour l'âge des animaux ; absente : aucun anniversaire. */
+  readonly seed?: number;
   readonly time: number;
   readonly entities: readonly Fish[];
   readonly eggs?: readonly Egg[];
@@ -301,6 +310,7 @@ export function watchJournal(world: JournalSubject): JournalWatch {
     alertNoted: new Map(),
     deadSeen: deadIds(world.dead),
     moltSeen: lastMolt(world.exuviae, -Infinity),
+    birthdays: birthdayWatch(world),
   };
 }
 
@@ -314,7 +324,8 @@ export function watchJournal(world: JournalSubject): JournalWatch {
  * « critique », est notée avec sa gravité (#592) ; une alerte qui s'apaise ou disparaît
  * n'écrit rien, et une alerte revenue moins de `JOURNAL_ALERT_REPEAT_SECONDS` après sa dernière
  * entrée de même gravité n'est pas renotée (#599). Ordre stable : maladies dans l'ordre de
- * `DISEASES`, puis pontes, puis éclosions et naissances, puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
+ * `DISEASES`, puis pontes, puis éclosions et naissances, morts de vieillesse, mues, anniversaires
+ * (#877, `sim/journal-birthdays.ts`), puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
  */
 export function observeJournal(watch: JournalWatch, world: JournalSubject): JournalEntry[] {
   const time = world.time;
@@ -325,6 +336,7 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
   pushHatchingEvents(events, time, changes.hatched);
   pushOldAgeEvents(events, time, watch, world.dead);
   pushMoltEvents(events, time, watch, world.exuviae);
+  watch.birthdays = pushBirthdayEvents(events, watch.birthdays, world);
   pushAlertEvents(events, time, watch, world.alerts);
   return events;
 }
@@ -589,8 +601,22 @@ const FIXED_TEXTS = {
   changementEau: 'Changement d’eau',
 } as const satisfies Partial<Record<JournalKind, string>>;
 
-/** Début du texte des sortes « espèce (effectif) » (#857, #859). */
-const SPECIES_ANIMAL_TEXTS = { vieillesse: 'Mort de vieillesse', mue: 'Mue' } as const;
+/** Effectif d'animaux en français : « 1 animal », « 3 animaux ». */
+function animalsText(entry: JournalEntry): string {
+  const count = entry.count ?? 1;
+  return `${count} ${count > 1 ? 'animaux' : 'animal'}`;
+}
+
+/** Texte des sortes « espèce (effectif) » (#857, #859) et des anniversaires (#877). */
+const SPECIES_ANIMAL_TEXTS = {
+  vieillesse: (entry) =>
+    `Mort de vieillesse : ${speciesLabel(entry.detail)} (${animalsText(entry)})`,
+  mue: (entry) => `Mue : ${speciesLabel(entry.detail)} (${animalsText(entry)})`,
+  anniversaire: (entry) => {
+    const years = entry.years ?? 1;
+    return `Anniversaire : ${speciesLabel(entry.detail)}, ${years} an${years > 1 ? 's' : ''} (${animalsText(entry)})`;
+  },
+} as const satisfies Partial<Record<JournalKind, (entry: JournalEntry) => string>>;
 
 function isSpeciesAnimalKind(kind: JournalKind): kind is keyof typeof SPECIES_ANIMAL_TEXTS {
   return Object.hasOwn(SPECIES_ANIMAL_TEXTS, kind);
@@ -599,9 +625,9 @@ function isSpeciesAnimalKind(kind: JournalKind): kind is keyof typeof SPECIES_AN
 /** Texte d'une entrée, en français. */
 export function journalText(entry: JournalEntry): string {
   const count = entry.count ?? 1;
-  const animals = `${count} ${count > 1 ? 'animaux' : 'animal'}`;
+  const animals = animalsText(entry);
   if (isSpeciesAnimalKind(entry.kind)) {
-    return `${SPECIES_ANIMAL_TEXTS[entry.kind]} : ${speciesLabel(entry.detail)} (${animals})`;
+    return SPECIES_ANIMAL_TEXTS[entry.kind](entry);
   }
   switch (entry.kind) {
     case 'maladie':
@@ -672,13 +698,14 @@ function readEntry(value: unknown): JournalEntry | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return null;
   }
-  const { time, kind, detail, count, severity } = value as Record<string, unknown>;
+  const { time, kind, detail, count, severity, years } = value as Record<string, unknown>;
   const entry: JournalEntry = {
     time: time as number,
     kind: kind as JournalKind,
     ...(detail === undefined ? {} : { detail: detail as string }),
     ...(count === undefined ? {} : { count: count as number }),
     ...(severity === undefined ? {} : { severity: severity as AlertSeverity }),
+    ...(years === undefined ? {} : { years: years as number }),
   };
   return isEntry(entry) ? entry : null;
 }
@@ -707,19 +734,27 @@ const isTreatmentDetail = (detail: unknown): boolean =>
 const isSpeciesDetail = (detail: unknown): boolean =>
   typeof detail === 'string' && Object.hasOwn(SPECIES, detail);
 
-/** Règle propre à une sorte, sans gravité : la gravité est réservée aux alertes. */
+/**
+ * Règle propre à une sorte, sans gravité ni âge : la gravité est réservée aux alertes, l'âge
+ * atteint aux anniversaires (#877).
+ */
 const withoutSeverity =
   (rule: (entry: JournalEntry) => boolean) =>
   (entry: JournalEntry): boolean =>
-    entry.severity === undefined && rule(entry);
+    entry.severity === undefined && entry.years === undefined && rule(entry);
+
+/** Âge atteint d'un anniversaire : entier de 1 à `MAX_COUNT`. */
+const isBirthdayYears = (years: unknown): boolean =>
+  Number.isSafeInteger(years) && (years as number) >= 1 && (years as number) <= MAX_COUNT;
 
 /**
  * Précision et effectif attendus pour chaque sorte (temps, sorte et bornes de l'effectif déjà
  * vérifiés par `isEntry`).
  */
 const ENTRY_RULES: Readonly<Record<JournalKind, (entry: JournalEntry) => boolean>> = {
-  alerte: ({ count, detail, severity }) =>
+  alerte: ({ count, detail, severity, years }) =>
     count === undefined &&
+    years === undefined &&
     typeof detail === 'string' &&
     Object.hasOwn(JOURNAL_ALERT_LABELS, detail) &&
     (severity === 'attention' || severity === 'critique'),
@@ -731,6 +766,8 @@ const ENTRY_RULES: Readonly<Record<JournalKind, (entry: JournalEntry) => boolean
   naissance: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   vieillesse: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   mue: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
+  anniversaire: ({ detail, severity, years }) =>
+    severity === undefined && isSpeciesDetail(detail) && isBirthdayYears(years),
   changementEau: withoutSeverity(({ detail }) => detail === undefined),
   taille: withoutSeverity(({ detail }) => detail === undefined),
   seance: withoutSeverity(({ detail, count }) => detail === undefined && count === undefined),

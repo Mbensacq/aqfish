@@ -1,3 +1,5 @@
+import { eldest, YEAR_SECONDS } from '../../sim/aging';
+import { eldestText } from '../../sim/aging-text';
 import { DEFAULT_DAY_CLOCK } from '../../sim/daylight';
 import { addJournalEntry, waterChangeEntry } from '../../sim/journal';
 import { initialMaintenance } from '../../sim/maintenance';
@@ -151,6 +153,28 @@ describe('TankRecordsController (#696)', () => {
     });
   });
 
+  describe('doyen et anniversaires (#877)', () => {
+    it('doyen publié au relevé : animal le plus âgé ; bac vide : rien', () => {
+      const w = world();
+      records.refresh(w);
+      expect(records.eldest()).toBe(eldestText(eldest(w)));
+      expect(records.eldest()).toMatch(/^Doyen du bac : .+, .+\.$/);
+      w.entities = [];
+      records.refresh(w);
+      expect(records.eldest()).toBeNull();
+    });
+
+    it('anniversaire noté au journal quand un animal passe une année', () => {
+      const w = world();
+      const oldest = eldest(w)!;
+      const toBirthday = YEAR_SECONDS - (oldest.age % YEAR_SECONDS);
+      records.refresh(w);
+      w.time += toBirthday;
+      records.refresh(w);
+      expect(records.journal().some((line) => line.kind === 'anniversaire')).toBe(true);
+    });
+  });
+
   describe('parcours « Mon premier aquarium » (#512)', () => {
     it('publié hors du monde ; inscrit seulement une fois le bac avancé', () => {
       const w = world();
@@ -184,6 +208,7 @@ describe('TankRecordsController (#696)', () => {
     expect(records.waterHistory()).toBeNull();
     expect(records.journal()).toEqual([]);
     expect(records.reproduction()).toBeNull();
+    expect(records.eldest()).toBeNull();
     expect(records.firstTankPath()).toBeNull();
     expect(JSON.stringify(w)).toBe(before);
   });

@@ -402,6 +402,10 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           @if (capacityLine(); as line) {
             <p class="status__review-empty" data-review-capacity>{{ line }}</p>
           }
+          <!-- Doyen du bac (#877) : animal vivant le plus âgé. -->
+          @if (eldest(); as line) {
+            <p class="status__review-empty" data-review-eldest>{{ line }}</p>
+          }
           <!-- Bilan de reproduction des derniers jours (#677), lu dans le journal. -->
           @if (reproduction(); as line) {
             <p class="status__review-empty" data-reproduction-summary>{{ line }}</p>
@@ -551,6 +555,9 @@ export class DashboardStatus {
    * filtre « Reproduction » du journal ; `null` : rien à afficher (capture).
    */
   readonly reproduction = input<string | null>(null);
+
+  /** Doyen du bac (fourni par l'hôte, #877), dans le bilan ; `null` : rien à afficher. */
+  readonly eldest = input<string | null>(null);
 
   /** Stockage du filtre retenu du journal (#677). */
   private readonly journalFilterStorage = inject(JOURNAL_FILTER_STORAGE);

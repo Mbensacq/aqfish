@@ -102,8 +102,6 @@ export const DECOR_PHYSICS_LOADER = new InjectionToken<DecorPhysicsLoader>('DECO
   factory: () => loadDecorPhysics,
 });
 
-export type { TankNotice } from './tank-room-controller';
-
 export {
   ROOM_LAYOUT_MESSAGES,
   supportPlaceLabel,
@@ -518,6 +516,8 @@ export class AquariumHost {
   readonly journal = this.records.journal;
   /** Bilan de reproduction des derniers jours (#677) ; `null` en capture. */
   readonly reproduction = this.records.reproduction;
+  /** Doyen du bac affiché (#877) ; `null` en capture ou bac vide. */
+  readonly eldest = this.records.eldest;
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
   readonly firstTankPath = this.records.firstTankPath;
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
