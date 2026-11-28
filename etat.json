@@ -11813,6 +11813,24 @@
         }
       },
       "metriques": {}
+    },
+    "326": {
+      "numero": 326,
+      "date": "2026-11-28",
+      "debut": "2026-11-28T10:13:30.250Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T10:13:30.250Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
