@@ -1,8 +1,2 @@
-# Captures c323
-
-- Branche : cycle/c323-saisons-reglage
-- PR : #882
-- Commit : 05e2777ac94be70ed0313ff10ba9a26f6fef07de
-- Graine : celle des captures (par défaut)
-- Durée : 6,9 min (186 tests)
-- Écarts avec c322 : paludarium-three-quarter-oeufs (zone 4x66 px), three-quarter-minuit-guide (zone 262x36 px) ; nouvelles : bassin-side-ete, bassin-side-hiver
+Branche cycle/c324-s3-eau-froide, PR #884, commit b69d030, graine par défaut, temps figé par le mode capture.
+186 captures ; 185 identiques à la série précédente (c323), 1 différence : paludarium-three-quarter-oeufs.png.
