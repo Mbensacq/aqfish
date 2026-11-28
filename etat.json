@@ -11902,10 +11902,10 @@
           "note": "Issue #895 : Rétro sprint 47, plan sprint 48 (#892 M, #893 S, #894 S créées) ; dette à 31 > 30"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T17:02:20.933Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T17:38:42.603Z",
+          "note": "PR #896 : #891 bornes curseurs via tankLimits + ROADMAP v1.36, CI verte ; complexité max 24 (validateSpecies, applyTreatmentInPlace), plus longue fonction 96 l. (roomBlocks)"
         }
       },
       "metriques": {}
