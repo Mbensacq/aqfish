@@ -11656,10 +11656,10 @@
           "note": "PR #879 : #875 (sameAgeDays en oracle de test) + ROADMAP v1.34/v1.35, CI verte ; aucune rétro ancienne à fermer ; e2e locaux partiels (185/568 verts), CI complète verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T00:12:35.332Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T00:29:39.752Z",
+          "note": "Verdict OK, 0 bug, captures c321 publiées (189/189 identiques à c320)"
         }
       },
       "metriques": {}
