@@ -11830,10 +11830,10 @@
           "note": "Issue #877 : anniversaires au journal et doyen du bac (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T10:14:29.725Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T12:19:20.111Z",
+          "note": "PR #888 : anniversaires au journal et doyen du bac, CI verte"
         }
       },
       "metriques": {}
