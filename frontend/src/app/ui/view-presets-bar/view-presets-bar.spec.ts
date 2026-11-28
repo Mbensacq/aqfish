@@ -281,6 +281,30 @@ describe('ViewPresetsBar', () => {
     });
   });
 
+  describe('album (#860)', () => {
+    const albumButton = (): HTMLButtonElement =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+        '[data-album-toggle]',
+      )!;
+
+    it('bouton « Album » après « Photo », sans touche ; son état vient de l’application', async () => {
+      let toggles = 0;
+      fixture.componentInstance.albumToggled.subscribe(() => toggles++);
+      const button = albumButton();
+      expect(button.textContent?.trim()).toBe('Album');
+      expect(button.previousElementSibling?.getAttribute('data-action')).toBe('photo');
+      expect(button.hasAttribute('aria-keyshortcuts')).toBe(false);
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      button.click();
+      expect(toggles).toBe(1);
+      expect(emitted).toEqual([]);
+      fixture.componentRef.setInput('albumOpen', true);
+      await fixture.whenStable();
+      expect(button.getAttribute('aria-expanded')).toBe('true');
+      expect(button.classList).toContain('view-presets-bar__button--active');
+    });
+  });
+
   describe('raclette et sécateur (#476, #477 ; dans la barre depuis #722)', () => {
     const bar = () => fixture.nativeElement as HTMLElement;
     const scraper = () => bar().querySelector<HTMLButtonElement>('[data-scraper]')!;

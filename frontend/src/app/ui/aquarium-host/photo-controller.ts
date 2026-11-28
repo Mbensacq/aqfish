@@ -25,6 +25,14 @@ export interface PhotoPorts {
   isCapture(): boolean;
   /** Vrai après la destruction de l'hôte : plus aucun message. */
   isStopped(): boolean;
+  /** Temps simulé du monde affiché (s), `null` avant le démarrage (album, #860). */
+  worldTime(): number | null;
+}
+
+/** Image de l'album (#860) : PNG à la résolution de la scène et temps simulé de la prise. */
+export interface AlbumShot {
+  readonly dataUrl: string;
+  readonly time: number;
 }
 
 /**
@@ -67,6 +75,36 @@ export class PhotoController {
     } catch {
       this.failed();
       return false;
+    }
+  }
+
+  /**
+   * Image de la vue courante pour l'album photo (#860) : PNG à la résolution de la scène, sans
+   * interface, et temps simulé de la prise. `null` en mode capture, avant le démarrage ou si
+   * l'image n'a pas pu être relue ou encodée (message bref dans ce dernier cas). Ne lève jamais.
+   */
+  albumShot(): AlbumShot | null {
+    const view = this.ports.view();
+    const time = this.ports.worldTime();
+    if (!view || time === null || this.ports.isCapture()) {
+      return null;
+    }
+    this.setNotice(null);
+    const dataUrl = this.readDataUrl(view);
+    if (dataUrl === null) {
+      this.failed();
+      return null;
+    }
+    return { dataUrl, time };
+  }
+
+  /** Image PNG de la vue à la résolution de la scène, `null` si la relecture échoue ou lève. */
+  private readDataUrl(view: PhotoSource): string | null {
+    try {
+      const pixels = view.takePhoto();
+      return pixels ? this.dataUrl(pixels) : null;
+    } catch {
+      return null;
     }
   }
 

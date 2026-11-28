@@ -118,7 +118,9 @@
 // de l'écran (dès 768 px). Les touches (rappelées par l'aide-mémoire et le nom accessible)
 // sont masquées et les marges resserrées : ~620 px, qui tiennent jusqu'à 640 px de large.
 // Les icônes des outils (#724) aussi : elles ajouteraient ~70 px, la barre déborderait.
-@media (max-width: 1279px) {
+// Avec « Album » (#860), la barre complète fait ~1 000 px : à 1280 px elle touchait
+// « Pharmacie », d'où ce mode compact jusqu'à 1439 px.
+@media (max-width: 1439px) {
   .view-presets-bar__button {
     padding: 4px 6px;
   }
@@ -126,6 +128,16 @@
   .view-presets-bar__key,
   .view-presets-bar__icon {
     display: none;
+  }
+}
+
+// Entre 640 et 767 px (#860) : avec « Album », la barre compacte (~660 px, ~700 px en
+// DejaVu Sans) dépassait de l'écran à 640 px ; marges de 3 px et texte en 13 px, comme sur
+// téléphone, la ramènent sous 610 px.
+@media (max-width: 767px) {
+  .view-presets-bar__button {
+    padding: 4px 3px;
+    font-size: 13px;
   }
 }
 

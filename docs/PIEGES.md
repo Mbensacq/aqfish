@@ -2192,3 +2192,9 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   test à part (`three-quarter-nourriture-decomposition`, `top-mues`). Autre piège revu : un
   objet crème de la file opaque (exuvies, capsules) vire au vert d'eau pâle à la passe palette
   et se fond dans le sable ; le dessiner après l'eau. (2026-11-27)
+- **Un bouton de plus dans la barre des vues déborde vite** (cycle 322, #860) : la barre est
+  centrée et longue (~1 000 px complète, ~660 px compacte). Avec « Album », elle touchait
+  « Pharmacie » à 1280 px et sortait de l'écran à 640 px en DejaVu Sans. Mesurer la boîte de
+  `.view-presets-bar` contre `[data-pharmacy-toggle]` et les bords à 640, 768, 1100, 1280 et
+  1440 px, en police par défaut et en DejaVu Sans, avant d'ajouter un bouton ; le mode compact
+  (sans touches ni icônes) vaut désormais jusqu'à 1439 px. (2026-11-28)

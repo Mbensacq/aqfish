@@ -132,8 +132,10 @@ emplacement change. **Aucune fonctionnalité n'est perdue.**
 | Données     | Sauvegarde et partage | Partager ce bac (action principale), exporter, importer, photo du bac ; mention de l'enregistrement automatique                                                                                                                                       |
 
 Restent **hors de la fenêtre**, sous la main dans la barre du bas : nourrir, raclette,
-sécateur, photo et préréglages de vue (gestes de jeu, pas des réglages). La pharmacie, le wiki,
-le bilan du bac, le tableau de bord de l'eau et l'aide-mémoire gardent leur place et prennent
+sécateur, photo, album photo (#860) et préréglages de vue (gestes de jeu, pas des réglages).
+L'album s'ouvre en fenêtre modale au centre, exclusive avec les autres panneaux : 12 photos au
+plus, gardées dans le navigateur, légendées par la date de jeu et le milieu. La pharmacie, le
+wiki, le bilan du bac, le tableau de bord de l'eau et l'aide-mémoire gardent leur place et prennent
 la charte.
 
 ### Recherche

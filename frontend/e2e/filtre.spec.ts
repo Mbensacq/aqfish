@@ -219,9 +219,9 @@ test.describe('Filtre pixel art', () => {
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(390);
       const buttons = bar.getByRole('button');
-      // 5 vues, « Pixel art », « Nourrir » (#67), « Raclette » et « Sécateur » (#722) et
-      // « Photo » (#479).
-      await expect(buttons).toHaveCount(10);
+      // 5 vues, « Pixel art », « Nourrir » (#67), « Raclette » et « Sécateur » (#722),
+      // « Photo » (#479) et « Album » (#860).
+      await expect(buttons).toHaveCount(11);
       const firstHeight = (await buttons.first().boundingBox())!.height;
       for (const button of await buttons.all()) {
         const b = (await button.boundingBox())!;
