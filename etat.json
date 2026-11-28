@@ -11878,10 +11878,10 @@
           "note": "Verdict OK, 0 bug, captures c327 publiées (190/192 identiques, 2 écarts : #868 et bandeau tablette voulu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T16:26:07.734Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T16:59:30.599Z",
+          "note": "PR #890 fusionnée → v1.35.5 (release CI OK), #885 et #881 fermées, CI main verte, dette #891 ; suppression de branche refusée (403)"
         }
       },
       "metriques": {}
