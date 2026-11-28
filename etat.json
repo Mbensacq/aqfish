@@ -11768,6 +11768,12 @@
           "debut": "2026-11-28T06:23:56.256Z",
           "fin": "2026-11-28T07:11:11.135Z",
           "note": "Verdict OK, 0 bug, captures c324 publiées (185/186 identiques)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T07:11:52.867Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
