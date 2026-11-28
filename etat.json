@@ -11788,10 +11788,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T07:43:11.569Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T07:43:30.772Z",
+          "note": "Issue #876 : croissance des jeunes selon l'âge (M)"
         }
       },
       "metriques": {}
