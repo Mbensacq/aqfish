@@ -11698,10 +11698,10 @@
           "note": "Verdict OK, 0 bug, captures c322 publiées (157/189 identiques, écarts = barre des vues)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T02:34:54.083Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T03:07:57.922Z",
+          "note": "PR #880 fusionnée → v1.35.0 (release CI OK, CI main verte), #860 fermée ; bug #881 ouvert (horloge/pH à 1100 px) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
