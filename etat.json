@@ -11836,10 +11836,10 @@
           "note": "PR #888 : anniversaires au journal et doyen du bac, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T12:20:01.846Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T13:55:41.139Z",
+          "note": "Verdict OK, 0 bug, captures c326 publiées (191/193 identiques, 2 écarts connus #868)"
         }
       },
       "metriques": {}
