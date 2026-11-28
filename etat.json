@@ -11824,10 +11824,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T10:13:30.250Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T10:13:49.842Z",
+          "note": "Issue #877 : anniversaires au journal et doyen du bac (S)"
         }
       },
       "metriques": {}
