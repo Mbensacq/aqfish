@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { AgeReadoutBuffer } from './age-readout-buffer';
-import { NO_AGES, sameAgeDays, speciesAges, type AgeReadout } from './aging-text';
+import { NO_AGES, speciesAges, type AgeReadout } from './aging-text';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
+import { sameAgeDays } from './testing/age-readout-oracle';
 import { createWorld } from './world';
 import type { World } from './world-types';
 
@@ -85,5 +86,13 @@ describe('tampon du relevé des âges (#868)', () => {
         expect(sameAgeDays(shown, speciesAges(world))).toBe(true);
       }
     }
+  });
+
+  it('oracle : deux relevés de mêmes jours sont égaux ; un jour de plus les distingue', () => {
+    const a = { neon: { youngest: DAY, oldest: 2 * DAY } };
+    expect(sameAgeDays(a, { neon: { youngest: DAY + 5, oldest: 2 * DAY + 5 } })).toBe(true);
+    expect(sameAgeDays(a, { neon: { youngest: DAY, oldest: 3 * DAY } })).toBe(false);
+    expect(sameAgeDays(a, {})).toBe(false);
+    expect(sameAgeDays(a, { guppy: { youngest: DAY, oldest: 2 * DAY } })).toBe(false);
   });
 });

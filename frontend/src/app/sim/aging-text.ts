@@ -50,24 +50,6 @@ export function speciesAges(world: Pick<World, 'seed' | 'time' | 'entities'>): A
   return ages;
 }
 
-/** Vrai si deux relevés donnent les mêmes textes (même nombre de jours partout). */
-export function sameAgeDays(a: AgeReadout, b: AgeReadout): boolean {
-  const keys = Object.keys(a) as SpeciesId[];
-  if (keys.length !== Object.keys(b).length) {
-    return false;
-  }
-  return keys.every((id) => {
-    const x = a[id];
-    const y = b[id];
-    return (
-      x !== undefined &&
-      y !== undefined &&
-      ageDays(x.youngest) === ageDays(y.youngest) &&
-      ageDays(x.oldest) === ageDays(y.oldest)
-    );
-  });
-}
-
 /** Jours de jeu entiers vécus à l'âge `age` (secondes) ; 0 pour un âge négatif ou non fini. */
 export function ageDays(age: number): number {
   return age > 0 && Number.isFinite(age) ? Math.floor(age / DEFAULT_DAY_LENGTH_SECONDS) : 0;
