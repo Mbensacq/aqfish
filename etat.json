@@ -11834,6 +11834,12 @@
           "debut": "2026-11-28T10:14:29.725Z",
           "fin": "2026-11-28T12:19:20.111Z",
           "note": "PR #888 : anniversaires au journal et doyen du bac, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T12:20:01.846Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
