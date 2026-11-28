@@ -211,7 +211,9 @@ describe('caractérisation : readJournal et isEntry (#686, lot 6)', () => {
     expect(valid).toBeGreaterThan(50);
     expect(invalid).toBeGreaterThan(valid);
     // Sortes « vieillesse » (#857) puis « mue » (#859) ajoutées : nouvelles entrées valides.
-    expect(hash.digest()).toBe('0a4fcb069dcc82');
+    // Sorte « anniversaire » (#877) ajoutée : ses entrées sans âge atteint sont refusées ;
+    // sans elle, l'empreinte reste '0a4fcb069dcc82' (validation des autres sortes inchangée).
+    expect(hash.digest()).toBe('007752498a1c64');
   });
 });
 
