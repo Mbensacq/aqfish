@@ -61,6 +61,7 @@ describe('parseCaptureParams', () => {
       fry: false,
       eggs: false,
       current: null,
+      season: null,
       catappa: 0,
       feeder: null,
       editSelection: null,
@@ -245,6 +246,13 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('?capture=1&eau=autre').water).toBe('autre');
     expect(parseCaptureParams('?capture=1').water).toBeNull();
     expect(DEFAULT_CAPTURE_PARAMS.water).toBeNull();
+  });
+
+  it('lit la saison de saison= telle quelle, null si absente (#864)', () => {
+    expect(parseCaptureParams('?capture=1&saison=hiver').season).toBe('hiver');
+    expect(parseCaptureParams('?capture=1&saison=canicule').season).toBe('canicule');
+    expect(parseCaptureParams('?capture=1').season).toBeNull();
+    expect(DEFAULT_CAPTURE_PARAMS.season).toBeNull();
   });
 
   it('lit la force du courant de courant= telle quelle, null si absente (#460)', () => {
