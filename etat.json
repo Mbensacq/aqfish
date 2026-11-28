@@ -11900,6 +11900,12 @@
           "debut": "2026-11-28T17:00:08.824Z",
           "fin": "2026-11-28T17:01:41.452Z",
           "note": "Issue #895 : Rétro sprint 47, plan sprint 48 (#892 M, #893 S, #894 S créées) ; dette à 31 > 30"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-28T17:02:20.933Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
