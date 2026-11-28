@@ -1,2 +1,6 @@
-Branche cycle/c327-libelles-hauteur-bandeau, PR #890, commit 299ed336, graine par défaut des captures, 8,0 min.
-190/192 identiques à latest (c326). Écarts : paludarium-three-quarter-oeufs (bande #868, x921-925 y13-79) ; tablette-tableau-de-bord-alerte (jauges sur deux lignes, voulu).
+# Captures c328
+- Branche : cycle/c328-retro-sprint-47 (PR #896)
+- Commit : cd91f7ad1cd8ee7d4555d7b0ed8170fb629cbd0a
+- Graine : celle de captures.spec.ts (par défaut)
+- Durée : 7,4 min, 187 tests passés, 192 images
+- Comparaison : 192/192 identiques à latest (c327), diff -rq
