@@ -11800,10 +11800,10 @@
           "note": "PR #886 : croissance des jeunes selon l'âge (ADR 0191), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T08:33:44.909Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T08:50:17.516Z",
+          "note": "Verdict OK, 0 bug, captures c325 publiées (192/193 identiques)"
         }
       },
       "metriques": {}
