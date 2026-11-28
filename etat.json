@@ -11908,10 +11908,10 @@
           "note": "PR #896 : #891 bornes curseurs via tankLimits + ROADMAP v1.36, CI verte ; complexité max 24 (validateSpecies, applyTreatmentInPlace), plus longue fonction 96 l. (roomBlocks)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-28T17:39:23.542Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-28T17:58:29.243Z",
+          "note": "Verdict OK, 0 bug, captures c328 publiées (192/192 identiques à c327)"
         }
       },
       "metriques": {}
