@@ -1,4 +1,4 @@
-import { environmentById, type EnvironmentId } from './environment';
+import { environmentById, isTankResizable, type EnvironmentId, type Place } from './environment';
 import { clampTankDimensions, TANK_LIMITS, type DimensionRange, type TankDimensions } from './tank';
 
 /**
@@ -35,4 +35,19 @@ export function tankLimits(id: EnvironmentId): TankLimits {
 /** Dimensions `dims` bornées aux bornes de l'environnement `id` (`clampTankDimensions`). */
 export function clampTankDimensionsIn(id: EnvironmentId, dims: TankDimensions): TankDimensions {
   return clampTankDimensions(dims, tankLimits(id));
+}
+
+/**
+ * Dimensions réglées d'un lieu, bornées à celles de son environnement (`clampTankDimensionsIn`,
+ * #885), ou `undefined` sans réglage.
+ * @throws RangeError si l'environnement du lieu n'a pas de dimensions réglables.
+ */
+export function placeTankDimensions(place: Place): TankDimensions | undefined {
+  if (typeof place === 'string' || place.dimensions === undefined) {
+    return undefined;
+  }
+  if (!isTankResizable(place.environment)) {
+    throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
+  }
+  return clampTankDimensionsIn(place.environment, place.dimensions);
 }

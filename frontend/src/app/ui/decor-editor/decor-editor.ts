@@ -20,7 +20,7 @@ import {
 import { MAX_ROOM_ITEMS, ROOM_ITEM_KINDS, type RoomItemKind } from '../../sim/room';
 import { ROOM_CATALOG } from '../../sim/room-furniture';
 import { DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../../sim/environment';
-import { TANK_LIMITS, type TankDimensions } from '../../sim/tank';
+import { TANK_LIMITS, type DimensionRange, type TankDimensions } from '../../sim/tank';
 import { clampTankDimensionsIn, tankLimits } from '../../sim/tank-limits';
 
 /** Identifiant du panneau de l'éditeur de décor. */
@@ -62,6 +62,15 @@ export const DECOR_POSE_COMMANDS: readonly {
   { id: 'agrandir', label: 'Agrandir', name: 'Agrandir', key: '+', rotate: 0, scale: 1 },
 ];
 
+/** Bornes et pas d'une dimension, de mètres en centimètres entiers (curseurs de l'éditeur). */
+function rangeInCentimeters(range: DimensionRange): DimensionRange {
+  return {
+    min: Math.round(range.min * 100),
+    max: Math.round(range.max * 100),
+    step: Math.round(range.step * 100),
+  };
+}
+
 /**
  * Curseurs des dimensions du bac (issue #171), dans l'ordre d'affichage : bornes et pas de
  * `TANK_LIMITS`, affichés en centimètres.
@@ -81,9 +90,7 @@ export const TANK_DIMENSION_FIELDS: readonly {
 ).map(([key, label]) => ({
   key,
   label,
-  min: Math.round(TANK_LIMITS[key].min * 100),
-  max: Math.round(TANK_LIMITS[key].max * 100),
-  step: Math.round(TANK_LIMITS[key].step * 100),
+  ...rangeInCentimeters(TANK_LIMITS[key]),
 }));
 
 /** Touches de pose (`KeyboardEvent.key`) : `=` est le `+` sans Maj d'un clavier QWERTY. */
@@ -231,13 +238,13 @@ function decorPoseHint(choice: DecorChoiceId): string {
             Longueur
             <output class="decor-editor__value">{{ centimeters(dims.width) }} cm</output>
           </span>
-          <!-- Bornes de l'environnement (#885), liées avant la valeur ; max et pas statiques. -->
+          <!-- Bornes de l'environnement (tankLimits, #885, #891), liées avant la valeur. -->
           <input
             class="decor-editor__range"
             type="range"
-            [min]="minimums().width"
-            max="200"
-            step="10"
+            [min]="ranges().width.min"
+            [max]="ranges().width.max"
+            [step]="ranges().width.step"
             aria-label="Longueur du bac, en centimètres"
             data-dimension="width"
             [value]="centimeters(dims.width)"
@@ -250,13 +257,13 @@ function decorPoseHint(choice: DecorChoiceId): string {
             Largeur
             <output class="decor-editor__value">{{ centimeters(dims.depth) }} cm</output>
           </span>
-          <!-- Bornes de l'environnement (#885), liées avant la valeur ; max et pas statiques. -->
+          <!-- Bornes de l'environnement (tankLimits, #885, #891), liées avant la valeur. -->
           <input
             class="decor-editor__range"
             type="range"
-            [min]="minimums().depth"
-            max="90"
-            step="5"
+            [min]="ranges().depth.min"
+            [max]="ranges().depth.max"
+            [step]="ranges().depth.step"
             aria-label="Largeur du bac, en centimètres"
             data-dimension="depth"
             [value]="centimeters(dims.depth)"
@@ -269,13 +276,13 @@ function decorPoseHint(choice: DecorChoiceId): string {
             Hauteur
             <output class="decor-editor__value">{{ centimeters(dims.height) }} cm</output>
           </span>
-          <!-- Bornes de l'environnement (#885), liées avant la valeur ; max et pas statiques. -->
+          <!-- Bornes de l'environnement (tankLimits, #885, #891), liées avant la valeur. -->
           <input
             class="decor-editor__range"
             type="range"
-            [min]="minimums().height"
-            max="90"
-            step="5"
+            [min]="ranges().height.min"
+            [max]="ranges().height.max"
+            [step]="ranges().height.step"
             aria-label="Hauteur du bac, en centimètres"
             data-dimension="height"
             [value]="centimeters(dims.height)"
@@ -331,15 +338,17 @@ export class DecorEditor {
 
   protected readonly panelId = DECOR_EDITOR_ID;
   /**
-   * Minimum de chaque curseur, en centimètres : celui de l'environnement (`tankLimits`), pour
-   * que le bac d'eau froide (45 cm de haut) s'affiche à sa vraie hauteur (#885).
+   * Bornes et pas de chaque curseur, en centimètres, tous dérivés de `tankLimits` : le minimum
+   * de l'environnement, pour que le bac d'eau froide (45 cm de haut) s'affiche à sa vraie
+   * hauteur (#885), et le maximum et le pas de `TANK_LIMITS`, pour que l'éditeur suive tout
+   * changement des bornes (#891).
    */
-  protected readonly minimums = computed(() => {
+  protected readonly ranges = computed(() => {
     const limits = tankLimits(this.environment());
     return {
-      width: Math.round(limits.width.min * 100),
-      depth: Math.round(limits.depth.min * 100),
-      height: Math.round(limits.height.min * 100),
+      width: rangeInCentimeters(limits.width),
+      depth: rangeInCentimeters(limits.depth),
+      height: rangeInCentimeters(limits.height),
     };
   });
   protected readonly tools = computed(() =>
