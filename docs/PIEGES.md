@@ -2218,3 +2218,11 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   du bassin exactement sur la liste des lieux, qu'elle recouvrait (impossible de quitter le
   bassin à la souris ; les e2e passaient par le rôle, sans le voir). Regarder la catégorie
   « Bac et milieu » au bassin après tout ajout sur cette ligne. (2026-11-28)
+- **Cadre haut entre 1100 et ~1260 px : la simulation recouvrait le pH** (cycle 327, #881) : la
+  place du bureau (`desk-slot`, entre « Réglages » et l'aide-mémoire) ne fait que `100vw − 479 px` ;
+  les cinq jauges (5 × 84 px au moins) et la simulation (`flex: none`) n'y tiennent pas, et la
+  grille débordait sous l'heure sans que rien ne casse. Le cadre passe en `flex-wrap: wrap` avec
+  une base de jauges **explicite** (`calc(5 * 84px + 4 * 10px)`) : avec `flex-basis: auto`, le
+  retour à la ligne se déciderait sur la largeur max-content des jauges et ferait passer la
+  simulation à la ligne dès 1280 px (captures changées). Mesurer les boîtes
+  (`e2e/bandeau-haut-largeurs.spec.ts`), pas seulement le débordement de la fenêtre. (2026-11-28)
