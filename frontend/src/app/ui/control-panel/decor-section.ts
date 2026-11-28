@@ -1,12 +1,29 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
+import { EDITABLE_ENVIRONMENTS } from '../../sim/decor-edit';
+import { environmentName } from './panel-views';
 import { SettingMark } from '../settings-window/settings-search-filter';
 
 /**
+ * Bacs dont le décor s'édite, en toutes lettres (« tropical et d’eau froide ») : noms
+ * d'`EDITABLE_ENVIRONMENTS` sans le mot « Bac », pour que le libellé suive la liste (#885).
+ */
+function editableTanksText(): string {
+  const names = EDITABLE_ENVIRONMENTS.map((id) => environmentName(id).replace(/^Bac /, ''));
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} et ${names.at(-1)}`;
+}
+
+/**
+ * Libellé et infobulle du bouton « Éditer le décor » désactivé (#885) : une seule chaîne pour
+ * l'`aria-label` et le `title`, qui ne peuvent plus diverger.
+ */
+export const DECOR_EDIT_DISABLED_LABEL = `Éditer le décor (bacs ${editableTanksText()} seulement)`;
+
+/**
  * Section « Décor » du panneau « Réglages » (#52 ; sortie du panneau au #697) : « Éditer le
- * décor » sur la ligne du titre (#167, bacs tropical et d'eau froide seulement), case « Afficher le décor » et
- * rendu des granulés (#117) sur la même ligne.
+ * décor » sur la ligne du titre (#167, bacs d'`EDITABLE_ENVIRONMENTS` seulement), case
+ * « Afficher le décor » et rendu des granulés (#117) sur la même ligne.
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
@@ -26,12 +43,8 @@ import { SettingMark } from '../settings-window/settings-search-filter';
         appSetting="Éditer le décor"
         data-decor-edit
         [attr.aria-disabled]="!decorEditable()"
-        [attr.aria-label]="
-          decorEditable()
-            ? 'Éditer le décor'
-            : 'Éditer le décor (bacs tropical et d’eau froide seulement)'
-        "
-        [attr.title]="decorEditable() ? null : 'Bac tropical seulement'"
+        [attr.aria-label]="decorEditable() ? 'Éditer le décor' : disabledLabel"
+        [attr.title]="decorEditable() ? null : disabledLabel"
         (click)="onEdit()"
       >
         Éditer le décor
@@ -70,6 +83,8 @@ export class DecorSection {
   readonly editRequested = output<void>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();
+
+  protected readonly disabledLabel = DECOR_EDIT_DISABLED_LABEL;
 
   protected onEdit(): void {
     if (this.decorEditable()) {
