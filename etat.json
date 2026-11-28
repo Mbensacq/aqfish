@@ -11749,7 +11749,7 @@
       "type": "fonctionnalite",
       "issue": 862,
       "pr": 884,
-      "version": null,
+      "version": "v1.35.2",
       "phases": {
         "planif": {
           "statut": "termine",
